@@ -10,11 +10,14 @@ import { searchDomesticStocks } from "@/server/kis/master";
 export async function searchStocks(query: string): Promise<KisStock[]> {
   const cfg = getKisConfig();
 
-  // Prefer real domestic master-based search. If anything fails (network, parsing), fallback to small mock list.
+  // In mock/disabled mode (no KIS keys), DO NOT hit external master-download endpoints.
+  if (!cfg.enabled) return mockSearchStocks(query);
+
+  // If enabled, try a richer domestic-master-based search. Fallback to a small mock list on any failure.
   try {
     return await searchDomesticStocks(query, 20);
   } catch {
-    return cfg.enabled ? mockSearchStocks(query) : mockSearchStocks(query);
+    return mockSearchStocks(query);
   }
 }
 
