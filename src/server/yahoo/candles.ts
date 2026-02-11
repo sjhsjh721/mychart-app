@@ -102,6 +102,29 @@ function isFiniteCandle(x: KisCandle | null): x is KisCandle {
   return [x.open, x.high, x.low, x.close].every((n) => Number.isFinite(n));
 }
 
+export async function getYahooQuote(code: string): Promise<{
+  price: number;
+  change?: number;
+  changeRate?: number;
+  name?: string;
+}> {
+  const symbol = normalizeYahooSymbol(code);
+  if (!symbol) return { price: 0 };
+
+  try {
+    const result = await yahooFinance.quote(symbol);
+
+    return {
+      price: result.regularMarketPrice ?? 0,
+      change: result.regularMarketChange,
+      changeRate: result.regularMarketChangePercent,
+      name: result.shortName || result.longName,
+    };
+  } catch {
+    return { price: 0 };
+  }
+}
+
 export async function getYahooCandles(params: {
   code: string;
   timeframe: Timeframe;

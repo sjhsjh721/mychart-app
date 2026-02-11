@@ -1,6 +1,6 @@
 "use client";
 
-import { PropsWithChildren, useMemo } from "react";
+import { PropsWithChildren } from "react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { useKisQuote } from "@/features/kis/use-kis-quote";
@@ -9,10 +9,6 @@ import { useChartStore } from "@/store/chart-store";
 import { useLayoutStore } from "@/store/layout-store";
 import { useSearchModalStore } from "@/store/search-modal-store";
 
-function isDomesticCode(code: string) {
-  return /^\d{6}$/.test(code);
-}
-
 export function AppShell({ children }: PropsWithChildren) {
   const { sidebarCollapsed, toggleSidebar, setSidebarCollapsed } = useLayoutStore();
   const selectedStock = useChartStore((s) => s.selectedStock);
@@ -20,9 +16,8 @@ export function AppShell({ children }: PropsWithChildren) {
 
   const openSearch = useSearchModalStore((s) => s.openModal);
 
-  const domestic = useMemo(() => isDomesticCode(selectedStock.code), [selectedStock.code]);
-
-  const { quote } = useKisQuote({ code: selectedStock.code, enabled: domestic, refreshMs: 5000 });
+  // 국내/해외 모두 실시간 quote
+  const { quote } = useKisQuote({ code: selectedStock.code, enabled: true, refreshMs: 5000 });
 
   const handleSelectStock = (stock: { code: string; name: string }) => {
     setSelectedStock(stock);

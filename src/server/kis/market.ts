@@ -4,9 +4,9 @@ import { getKisConfig } from "@/server/kis/config";
 import { kisRequest } from "@/server/kis/http";
 import type { Timeframe } from "@/lib/timeframe";
 import type { KisCandle, KisQuote, KisStock } from "@/server/kis/types";
-import { mockQuote, mockSearchStocks } from "@/server/kis/mock";
+import { mockSearchStocks } from "@/server/kis/mock";
 import { searchDomesticStocks } from "@/server/kis/master";
-import { getYahooCandles } from "@/server/yahoo/candles";
+import { getYahooCandles, getYahooQuote } from "@/server/yahoo/candles";
 
 export async function searchStocks(query: string): Promise<KisStock[]> {
   const cfg = getKisConfig();
@@ -55,8 +55,21 @@ export async function getCandles(params: {
 
 export async function getQuote(code: string): Promise<KisQuote> {
   const cfg = getKisConfig();
-  if (!cfg.enabled) return mockQuote(code);
+  const isPlainDomesticCode = /^\d{6}$/.test(code);
 
+  // 해외 주식이거나 KIS 미설정 시 Yahoo Finance 사용
+  if (!cfg.enabled || !isPlainDomesticCode) {
+    const yq = await getYahooQuote(code);
+    return {
+      code,
+      name: yq.name,
+      price: yq.price,
+      change: yq.change,
+      changeRate: yq.changeRate,
+    };
+  }
+
+  // 국내 주식 - KIS API
   type Resp = {
     output?: {
       hts_kor_isnm?: string;

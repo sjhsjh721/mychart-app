@@ -1,16 +1,10 @@
 "use client";
 
-import { useMemo } from "react";
 import { CandlestickChart } from "@/features/chart/components/candlestick-chart";
 import { PeriodSelector } from "@/features/chart/components/period-selector";
 import { TimeframeSelector } from "@/features/chart/components/timeframe-selector";
-import { generateSampleOhlcv } from "@/features/chart/lib/sample-data";
 import { useKisCandles } from "@/features/kis/use-kis-candles";
 import { PERIOD_COUNTS, useChartStore } from "@/store/chart-store";
-
-function isDomesticCode(code: string) {
-  return /^\d{6}$/.test(code);
-}
 
 export default function HomePage() {
   const timeframe = useChartStore((s) => s.timeframe);
@@ -19,25 +13,14 @@ export default function HomePage() {
   const setPeriod = useChartStore((s) => s.setPeriod);
   const selectedStock = useChartStore((s) => s.selectedStock);
 
-  const domestic = isDomesticCode(selectedStock.code);
   const count = PERIOD_COUNTS[period];
 
-  const {
-    candles: kisCandles,
-    volume: kisVolume,
-    loading,
-    error,
-  } = useKisCandles({
+  const { candles, volume, loading, error } = useKisCandles({
     code: selectedStock.code,
     timeframe,
     count,
-    enabled: domestic,
+    enabled: true, // 국내/해외 모두 실데이터
   });
-
-  const sample = useMemo(() => generateSampleOhlcv(timeframe, count), [timeframe, count]);
-
-  const candles = domestic ? kisCandles : sample.candles;
-  const volume = domestic ? kisVolume : sample.volume;
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -47,11 +30,7 @@ export default function HomePage() {
           <div className="hidden md:block">
             <div className="text-sm font-semibold">{selectedStock.code}</div>
             <div className="text-xs text-muted-foreground">
-              {domestic ? (
-                <>{loading ? "loading…" : error ? `error: ${error}` : "실시간 데이터"}</>
-              ) : (
-                <>샘플 데이터</>
-              )}
+              {loading ? "loading…" : error ? `error: ${error}` : "Yahoo Finance"}
             </div>
           </div>
           <div className="flex flex-wrap items-center justify-center gap-2 md:justify-end">
