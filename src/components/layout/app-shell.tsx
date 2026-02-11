@@ -59,21 +59,29 @@ export function AppShell({ children }: PropsWithChildren) {
           검색
         </Button>
 
-        <div className="min-w-0 flex-1">
+        <button
+          onClick={openSearch}
+          className="min-w-0 flex-1 text-left hover:opacity-80 transition-opacity"
+        >
           <div className="truncate text-xs font-semibold md:text-sm">
             {selectedStock.name || selectedStock.code}
+            <span className="ml-1 text-muted-foreground">▼</span>
           </div>
           {quote ? (
-            <div className="truncate text-[10px] text-muted-foreground md:text-xs">
-              {quote.price.toLocaleString()}원
-              <span className="hidden sm:inline">
+            <div className="truncate text-[10px] md:text-xs">
+              <span
+                className={quote.change && quote.change >= 0 ? "text-green-500" : "text-red-500"}
+              >
+                {quote.price.toLocaleString()}원
+              </span>
+              <span className="hidden sm:inline text-muted-foreground">
                 {typeof quote.change === "number" && typeof quote.changeRate === "number"
-                  ? ` · ${quote.change >= 0 ? "+" : ""}${quote.change.toLocaleString()} (${quote.changeRate}%)`
+                  ? ` ${quote.change >= 0 ? "+" : ""}${quote.change.toLocaleString()} (${quote.changeRate}%)`
                   : ""}
               </span>
             </div>
           ) : null}
-        </div>
+        </button>
 
         <Button
           variant="ghost"

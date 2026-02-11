@@ -2,10 +2,11 @@
 
 import { useMemo } from "react";
 import { CandlestickChart } from "@/features/chart/components/candlestick-chart";
+import { PeriodSelector } from "@/features/chart/components/period-selector";
 import { TimeframeSelector } from "@/features/chart/components/timeframe-selector";
 import { generateSampleOhlcv } from "@/features/chart/lib/sample-data";
 import { useKisCandles } from "@/features/kis/use-kis-candles";
-import { useChartStore } from "@/store/chart-store";
+import { PERIOD_COUNTS, useChartStore } from "@/store/chart-store";
 
 function isDomesticCode(code: string) {
   return /^\d{6}$/.test(code);
@@ -14,9 +15,12 @@ function isDomesticCode(code: string) {
 export default function HomePage() {
   const timeframe = useChartStore((s) => s.timeframe);
   const setTimeframe = useChartStore((s) => s.setTimeframe);
+  const period = useChartStore((s) => s.period);
+  const setPeriod = useChartStore((s) => s.setPeriod);
   const selectedStock = useChartStore((s) => s.selectedStock);
 
   const domestic = isDomesticCode(selectedStock.code);
+  const count = PERIOD_COUNTS[period];
 
   const {
     candles: kisCandles,
@@ -26,18 +30,18 @@ export default function HomePage() {
   } = useKisCandles({
     code: selectedStock.code,
     timeframe,
-    count: 240,
+    count,
     enabled: domestic,
   });
 
-  const sample = useMemo(() => generateSampleOhlcv(timeframe, 240), [timeframe]);
+  const sample = useMemo(() => generateSampleOhlcv(timeframe, count), [timeframe, count]);
 
   const candles = domestic ? kisCandles : sample.candles;
   const volume = domestic ? kisVolume : sample.volume;
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      {/* 타임프레임 선택 바 */}
+      {/* 타임프레임 + 기간 선택 바 */}
       <div className="border-b px-2 py-2 md:px-4 md:py-3">
         <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between md:gap-3">
           <div className="hidden md:block">
@@ -50,8 +54,10 @@ export default function HomePage() {
               )}
             </div>
           </div>
-          <div className="flex justify-center md:justify-end">
+          <div className="flex flex-wrap items-center justify-center gap-2 md:justify-end">
             <TimeframeSelector value={timeframe} onChange={setTimeframe} />
+            <div className="h-4 w-px bg-border hidden md:block" />
+            <PeriodSelector value={period} onChange={setPeriod} />
           </div>
         </div>
       </div>
