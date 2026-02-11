@@ -7,7 +7,7 @@ type LayoutState = {
 };
 
 export const useLayoutStore = create<LayoutState>((set) => ({
-  sidebarCollapsed: false,
+  sidebarCollapsed: true, // 모바일 우선: 기본값 닫힘
   toggleSidebar: () => set((s) => ({ sidebarCollapsed: !s.sidebarCollapsed })),
   setSidebarCollapsed: (collapsed) => set({ sidebarCollapsed: collapsed }),
 }));

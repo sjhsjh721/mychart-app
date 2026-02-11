@@ -6,21 +6,29 @@ import {
   CrosshairMode,
   IChartApi,
   type CandlestickData,
+  type HistogramData,
   type ISeriesApi,
   type MouseEventParams,
 } from "lightweight-charts";
 import { useEffect, useMemo, useRef, useState } from "react";
 
-export function CandlestickChart({ data }: { data: CandlestickData[] }) {
+export function CandlestickChart({
+  candles,
+  volume,
+}: {
+  candles: CandlestickData[];
+  volume?: HistogramData[];
+}) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const chartRef = useRef<IChartApi | null>(null);
-  const seriesRef = useRef<ISeriesApi<"Candlestick"> | null>(null);
+  const candleSeriesRef = useRef<ISeriesApi<"Candlestick"> | null>(null);
+  const volumeSeriesRef = useRef<ISeriesApi<"Histogram"> | null>(null);
   const [hoverText, setHoverText] = useState<string>("");
 
   const lastClose = useMemo(() => {
-    const last = data[data.length - 1];
+    const last = candles[candles.length - 1];
     return last ? last.close : undefined;
-  }, [data]);
+  }, [candles]);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -41,6 +49,10 @@ export function CandlestickChart({ data }: { data: CandlestickData[] }) {
       },
       rightPriceScale: {
         borderColor: "rgba(148, 163, 184, 0.2)",
+        scaleMargins: {
+          top: 0.1,
+          bottom: 0.28,
+        },
       },
       timeScale: {
         borderColor: "rgba(148, 163, 184, 0.2)",
@@ -51,7 +63,7 @@ export function CandlestickChart({ data }: { data: CandlestickData[] }) {
       handleScale: true,
     });
 
-    const series = chart.addCandlestickSeries({
+    const candleSeries = chart.addCandlestickSeries({
       upColor: "#00c853",
       downColor: "#ff1744",
       borderUpColor: "#00c853",
@@ -60,10 +72,25 @@ export function CandlestickChart({ data }: { data: CandlestickData[] }) {
       wickDownColor: "#ff1744",
     });
 
-    chartRef.current = chart;
-    seriesRef.current = series;
+    const volumeSeries = chart.addHistogramSeries({
+      priceScaleId: "volume",
+      priceFormat: { type: "volume" },
+    });
 
-    series.setData(data);
+    chart.priceScale("volume").applyOptions({
+      scaleMargins: {
+        top: 0.75,
+        bottom: 0,
+      },
+      visible: false,
+    });
+
+    chartRef.current = chart;
+    candleSeriesRef.current = candleSeries;
+    volumeSeriesRef.current = volumeSeries;
+
+    candleSeries.setData(candles);
+    volumeSeries.setData(volume ?? []);
     chart.timeScale().fitContent();
 
     const ro = new ResizeObserver(() => {
@@ -76,12 +103,19 @@ export function CandlestickChart({ data }: { data: CandlestickData[] }) {
     ro.observe(container);
 
     const onCrosshairMove = (param: MouseEventParams) => {
-      const p = param.seriesData.get(series) as CandlestickData | undefined;
+      const p = param.seriesData.get(candleSeries) as CandlestickData | undefined;
+      const v = param.seriesData.get(volumeSeries) as HistogramData | undefined;
+
       if (!p) {
         setHoverText("");
         return;
       }
-      setHoverText(`O ${p.open}  H ${p.high}  L ${p.low}  C ${p.close}`);
+
+      const parts = [`O ${p.open}`, `H ${p.high}`, `L ${p.low}`, `C ${p.close}`];
+      if (v && Number.isFinite(v.value)) {
+        parts.push(`V ${formatVolume(v.value)}`);
+      }
+      setHoverText(parts.join("  "));
     };
 
     chart.subscribeCrosshairMove(onCrosshairMove);
@@ -91,16 +125,18 @@ export function CandlestickChart({ data }: { data: CandlestickData[] }) {
       ro.disconnect();
       chart.remove();
       chartRef.current = null;
-      seriesRef.current = null;
+      candleSeriesRef.current = null;
+      volumeSeriesRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
-    if (!seriesRef.current || !chartRef.current) return;
-    seriesRef.current.setData(data);
+    if (!candleSeriesRef.current || !volumeSeriesRef.current || !chartRef.current) return;
+    candleSeriesRef.current.setData(candles);
+    volumeSeriesRef.current.setData(volume ?? []);
     chartRef.current.timeScale().fitContent();
-  }, [data]);
+  }, [candles, volume]);
 
   return (
     <div className="relative h-full w-full">
@@ -110,4 +146,12 @@ export function CandlestickChart({ data }: { data: CandlestickData[] }) {
       <div ref={containerRef} className="h-full w-full" />
     </div>
   );
+}
+
+function formatVolume(v: number) {
+  try {
+    return Math.round(v).toLocaleString();
+  } catch {
+    return String(Math.round(v));
+  }
 }

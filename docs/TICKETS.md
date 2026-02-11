@@ -5,76 +5,77 @@
 
 ---
 
-## Milestone 1: Foundation (1주)
+## Milestone 1: Foundation (1주) ✅ COMPLETE
 
-### MCHART-001: 프로젝트 초기 설정
+### MCHART-001: 프로젝트 초기 설정 ✅
 
 **담당:** 박개발  
 **예상:** 2시간  
 **Priority:** P0
 
-- [ ] Next.js 14 프로젝트 생성 (App Router)
-- [ ] TypeScript strict 설정
-- [ ] Tailwind CSS + shadcn/ui 설정
-- [ ] ESLint, Prettier 설정
-- [ ] 폴더 구조 잡기
+- [x] Next.js 14 프로젝트 생성 (App Router)
+- [x] TypeScript strict 설정
+- [x] Tailwind CSS + shadcn/ui 설정
+- [x] ESLint, Prettier 설정
+- [x] 폴더 구조 잡기
 
 ---
 
-### MCHART-002: Supabase 설정
+### MCHART-002: Supabase 설정 ✅
 
 **담당:** 김PM  
 **예상:** 1시간  
 **Priority:** P0
 
-- [ ] Supabase 프로젝트 생성
-- [ ] 테이블 스키마 생성 (stocks, watchlists, drawings, alerts)
-- [ ] RLS 정책 설정
-- [ ] 환경변수 설정
+- [x] Supabase 프로젝트 생성
+- [x] 테이블 스키마 생성 (stocks, watchlists, drawings, alerts)
+- [x] RLS 정책 설정
+- [x] 환경변수 설정
 
 ---
 
-### MCHART-003: 기본 레이아웃
+### MCHART-003: 기본 레이아웃 ✅
 
 **담당:** 박개발  
 **예상:** 3시간  
 **Priority:** P0
 
-- [ ] 메인 레이아웃 (Header, Sidebar, Content)
-- [ ] 다크모드 테마
-- [ ] 반응형 사이드바 (접기/펴기)
+- [x] 메인 레이아웃 (Header, Sidebar, Content)
+- [x] 다크모드 테마
+- [x] 반응형 사이드바 (접기/펴기)
 
 ---
 
-### MCHART-004: TradingView Lightweight Charts 연동
+### MCHART-004: TradingView Lightweight Charts 연동 ✅
 
 **담당:** 박개발  
 **예상:** 4시간  
 **Priority:** P0
 
-- [ ] lightweight-charts 설치
-- [ ] 기본 캔들스틱 차트 컴포넌트
-- [ ] 줌/팬 인터랙션
-- [ ] 크로스헤어 + 툴팁
-- [ ] 타임프레임 선택 UI
+- [x] lightweight-charts 설치
+- [x] 기본 캔들스틱 차트 컴포넌트
+- [x] 줌/팬 인터랙션
+- [x] 크로스헤어 + 툴팁
+- [x] 타임프레임 선택 UI
 
 ---
 
-### MCHART-005: KIS API 연동 (국내 주식)
+### MCHART-005: 주식 데이터 연동 ✅
 
 **담당:** 박개발  
 **예상:** 6시간  
 **Priority:** P0
 
-- [x] KIS API 인증 (OAuth)
-- [x] 토큰 관리 (갱신)
+> ⚠️ KIS API → Yahoo Finance로 변경 (인증 불필요, MVP에 적합)
+
+- [x] Yahoo Finance API 연동
 - [x] 종목 검색 API
 - [x] 일봉/분봉 데이터 조회
-- [x] 실시간 현재가 조회 (WebSocket or Polling)
+- [x] 국내(005930.KS)/해외(AAPL) 모두 지원
 
 ---
 
-### MCHART-006: 종목 검색 모달
+### MCHART-006: 종목 검색 모달 ✅
 
 **담당:** 박개발  
 **예상:** 2시간  

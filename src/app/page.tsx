@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import { CandlestickChart } from "@/features/chart/components/candlestick-chart";
 import { TimeframeSelector } from "@/features/chart/components/timeframe-selector";
-import { generateSampleCandles } from "@/features/chart/lib/sample-data";
+import { generateSampleOhlcv } from "@/features/chart/lib/sample-data";
 import { useKisCandles } from "@/features/kis/use-kis-candles";
 import { useChartStore } from "@/store/chart-store";
 
@@ -19,7 +19,8 @@ export default function HomePage() {
   const domestic = isDomesticCode(selectedStock.code);
 
   const {
-    data: kisData,
+    candles: kisCandles,
+    volume: kisVolume,
     loading,
     error,
   } = useKisCandles({
@@ -29,36 +30,36 @@ export default function HomePage() {
     enabled: domestic,
   });
 
-  const sampleData = useMemo(() => generateSampleCandles(timeframe, 240), [timeframe]);
+  const sample = useMemo(() => generateSampleOhlcv(timeframe, 240), [timeframe]);
 
-  const data = domestic ? kisData : sampleData;
+  const candles = domestic ? kisCandles : sample.candles;
+  const volume = domestic ? kisVolume : sample.volume;
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="border-b px-4 py-3">
-        <div className="flex items-center justify-between gap-3">
-          <div>
+      {/* 타임프레임 선택 바 */}
+      <div className="border-b px-2 py-2 md:px-4 md:py-3">
+        <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between md:gap-3">
+          <div className="hidden md:block">
             <div className="text-sm font-semibold">{selectedStock.code}</div>
             <div className="text-xs text-muted-foreground">
               {domestic ? (
-                <>
-                  KIS candles via <code className="font-mono">/api/kis/candles</code> (mock
-                  fallback)
-                  {loading ? " · loading…" : ""}
-                  {error ? ` · error: ${error}` : ""}
-                </>
+                <>{loading ? "loading…" : error ? `error: ${error}` : "실시간 데이터"}</>
               ) : (
-                <>Sample data (overseas integration later)</>
+                <>샘플 데이터</>
               )}
             </div>
           </div>
-          <TimeframeSelector value={timeframe} onChange={setTimeframe} />
+          <div className="flex justify-center md:justify-end">
+            <TimeframeSelector value={timeframe} onChange={setTimeframe} />
+          </div>
         </div>
       </div>
 
-      <div className="min-h-0 flex-1 p-4">
-        <div className="h-full min-h-[420px] w-full rounded-lg border bg-card">
-          <CandlestickChart data={data} />
+      {/* 차트 영역 */}
+      <div className="min-h-0 flex-1 p-2 md:p-4">
+        <div className="h-full min-h-[300px] w-full rounded-lg border bg-card md:min-h-[420px]">
+          <CandlestickChart candles={candles} volume={volume} />
         </div>
       </div>
     </div>

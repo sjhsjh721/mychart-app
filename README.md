@@ -1,36 +1,80 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# MyChart 📈
 
-## Getting Started
+주식 차트 분석 및 기술적 지표 시각화 웹 앱
 
-First, run the development server:
+## 스택
+
+- **프레임워크:** Next.js 14 (App Router)
+- **언어:** TypeScript (strict mode)
+- **스타일링:** Tailwind CSS + shadcn/ui
+- **차트:** TradingView Lightweight Charts
+- **데이터:** Yahoo Finance API
+- **DB:** Supabase (PostgreSQL)
+
+## 기능
+
+### M1: Foundation ✅
+- [x] 기본 레이아웃 (다크모드)
+- [x] 캔들스틱 차트
+- [x] Yahoo Finance 데이터 연동
+- [x] 종목 검색 모달
+- [x] 타임프레임 선택 (1m, 5m, 15m, 1h, 1D, 1W, 1M)
+
+### M2: Indicators (진행중)
+- [x] 거래량 차트 ✅
+- [ ] 이동평균선 (SMA, EMA)
+- [ ] RSI
+- [ ] 볼린저 밴드
+- [ ] 일목균형표
+
+### M3~M5 (예정)
+- 작도 도구 (추세선, 수평선)
+- 관심종목 & 알림
+- 해외 주식, MACD, 피보나치
+
+## 시작하기
 
 ```bash
+# 의존성 설치
+npm install
+
+# 개발 서버 실행
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+[http://localhost:3000](http://localhost:3000)에서 확인
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 환경변수
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+# .env.local
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
+```
 
-## Learn More
+## 프로젝트 구조
 
-To learn more about Next.js, take a look at the following resources:
+```
+src/
+├── app/                  # Next.js App Router
+│   ├── api/             # API Routes
+│   └── page.tsx         # 메인 페이지
+├── components/ui/       # shadcn/ui 컴포넌트
+├── features/
+│   ├── chart/          # 차트 컴포넌트
+│   ├── kis/            # 주식 데이터 훅
+│   └── search/         # 종목 검색
+├── server/
+│   ├── kis/            # KIS API (레거시)
+│   └── yahoo/          # Yahoo Finance API
+└── lib/                # 유틸리티
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 문서
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- [티켓 목록](./docs/TICKETS.md)
+- [백로그](/Users/jonghyeon/.openclaw/workspace/projects/mychart/BACKLOG.md)
 
-## Deploy on Vercel
+---
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+*Last updated: 2026-02-10*

@@ -31,9 +31,15 @@ export function TimeframeSelector({
         onChange(v as Timeframe);
       }}
       aria-label="Select timeframe"
+      className="flex-wrap gap-1"
     >
       {TIMEFRAMES.map((tf) => (
-        <ToggleGroupItem key={tf.value} value={tf.value} aria-label={tf.label}>
+        <ToggleGroupItem
+          key={tf.value}
+          value={tf.value}
+          aria-label={tf.label}
+          className="h-7 px-2 text-xs md:h-8 md:px-3 md:text-sm"
+        >
           {tf.label}
         </ToggleGroupItem>
       ))}

@@ -14,7 +14,7 @@ function isDomesticCode(code: string) {
 }
 
 export function AppShell({ children }: PropsWithChildren) {
-  const { sidebarCollapsed, toggleSidebar } = useLayoutStore();
+  const { sidebarCollapsed, toggleSidebar, setSidebarCollapsed } = useLayoutStore();
   const selectedStock = useChartStore((s) => s.selectedStock);
   const setSelectedStock = useChartStore((s) => s.setSelectedStock);
 
@@ -24,58 +24,95 @@ export function AppShell({ children }: PropsWithChildren) {
 
   const { quote } = useKisQuote({ code: selectedStock.code, enabled: domestic, refreshMs: 5000 });
 
+  const handleSelectStock = (stock: { code: string; name: string }) => {
+    setSelectedStock(stock);
+    // 모바일에서 종목 선택 시 사이드바 닫기
+    if (window.innerWidth < 768) {
+      setSidebarCollapsed(true);
+    }
+  };
+
   return (
     <div className="flex h-dvh w-full flex-col bg-background text-foreground">
-      <header className="flex h-14 items-center gap-3 border-b px-4">
-        <Button variant="ghost" size="sm" onClick={toggleSidebar} aria-label="Toggle sidebar">
-          {sidebarCollapsed ? "→" : "←"}
+      {/* 모바일 헤더 */}
+      <header className="flex h-12 items-center gap-2 border-b px-3 md:h-14 md:gap-3 md:px-4">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={toggleSidebar}
+          aria-label="Toggle sidebar"
+          className="h-8 w-8 p-0 md:h-9 md:w-auto md:px-3"
+        >
+          <span className="md:hidden">☰</span>
+          <span className="hidden md:inline">{sidebarCollapsed ? "→" : "←"}</span>
         </Button>
-        <div className="font-semibold">MyChart</div>
 
-        <Separator orientation="vertical" className="mx-1 h-6" />
+        <div className="hidden font-semibold md:block">MyChart</div>
+        <Separator orientation="vertical" className="mx-1 hidden h-6 md:block" />
 
-        <Button variant="outline" size="sm" onClick={openSearch}>
-          종목검색
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={openSearch}
+          className="h-8 px-2 text-xs md:h-9 md:px-3 md:text-sm"
+        >
+          검색
         </Button>
 
-        <div className="min-w-0">
-          <div className="truncate text-sm font-semibold">
-            {selectedStock.name
-              ? `${selectedStock.name} (${selectedStock.code})`
-              : selectedStock.code}
+        <div className="min-w-0 flex-1">
+          <div className="truncate text-xs font-semibold md:text-sm">
+            {selectedStock.name || selectedStock.code}
           </div>
           {quote ? (
-            <div className="truncate text-xs text-muted-foreground">
+            <div className="truncate text-[10px] text-muted-foreground md:text-xs">
               {quote.price.toLocaleString()}원
-              {typeof quote.change === "number" && typeof quote.changeRate === "number"
-                ? ` · ${quote.change >= 0 ? "+" : ""}${quote.change.toLocaleString()} (${quote.changeRate}%)`
-                : ""}
+              <span className="hidden sm:inline">
+                {typeof quote.change === "number" && typeof quote.changeRate === "number"
+                  ? ` · ${quote.change >= 0 ? "+" : ""}${quote.change.toLocaleString()} (${quote.changeRate}%)`
+                  : ""}
+              </span>
             </div>
-          ) : (
-            <div className="truncate text-xs text-muted-foreground">M1 Foundation</div>
-          )}
+          ) : null}
         </div>
 
-        <div className="ml-auto flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setSelectedStock({ code: "005930", name: "삼성전자", market: "KOSPI" })}
-          >
-            홈
-          </Button>
-        </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-8 px-2 text-xs md:h-9 md:px-3"
+          onClick={() => setSelectedStock({ code: "005930", name: "삼성전자", market: "KOSPI" })}
+        >
+          홈
+        </Button>
       </header>
 
-      <div className="flex min-h-0 flex-1">
+      <div className="relative flex min-h-0 flex-1">
+        {/* 모바일 오버레이 */}
+        {!sidebarCollapsed && (
+          <div
+            className="fixed inset-0 z-20 bg-black/50 md:hidden"
+            onClick={() => setSidebarCollapsed(true)}
+          />
+        )}
+
+        {/* 사이드바 - 모바일에서는 오버레이, 데스크톱에서는 인라인 */}
         <aside
           className={
-            "min-h-0 border-r transition-[width] duration-200 ease-out " +
-            (sidebarCollapsed ? "w-14" : "w-64")
+            "fixed left-0 top-12 z-30 h-[calc(100dvh-3rem)] border-r bg-background transition-transform duration-200 ease-out md:static md:z-auto md:h-auto md:translate-x-0 md:transition-[width] " +
+            (sidebarCollapsed
+              ? "-translate-x-full md:w-0 md:translate-x-0 md:overflow-hidden md:border-r-0"
+              : "w-64 translate-x-0")
           }
         >
           <div className="flex h-full flex-col">
-            <div className="p-3 text-xs font-medium text-muted-foreground">WATCHLIST</div>
+            <div className="flex items-center justify-between p-3">
+              <span className="text-xs font-medium text-muted-foreground">WATCHLIST</span>
+              <button
+                className="text-muted-foreground md:hidden"
+                onClick={() => setSidebarCollapsed(true)}
+              >
+                ✕
+              </button>
+            </div>
             <div className="flex-1 overflow-auto px-2 pb-4">
               <div className="space-y-1">
                 {[
@@ -88,10 +125,10 @@ export function AppShell({ children }: PropsWithChildren) {
                     <button
                       key={s.code}
                       className={
-                        "w-full rounded-md px-2 py-1 text-left text-sm hover:bg-muted " +
+                        "w-full rounded-md px-3 py-2 text-left text-sm hover:bg-muted " +
                         (active ? "bg-muted" : "")
                       }
-                      onClick={() => setSelectedStock({ code: s.code, name: s.name })}
+                      onClick={() => handleSelectStock({ code: s.code, name: s.name })}
                     >
                       {s.name}
                       {s.code === "005930" ? " (005930)" : ""}

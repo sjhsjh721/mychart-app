@@ -23,11 +23,19 @@ export async function GET(req: Request) {
 
   const timeframe = timeframeRaw as Timeframe;
 
-  const candles = await getCandles({
-    code,
-    timeframe,
-    count: Number.isFinite(count) ? count : 240,
-  });
+  try {
+    const candles = await getCandles({
+      code,
+      timeframe,
+      count: Number.isFinite(count) ? count : 240,
+    });
 
-  return NextResponse.json({ code, timeframe, candles });
+    return NextResponse.json({ code, timeframe, candles });
+  } catch (e) {
+    const message = e instanceof Error ? e.message : String(e);
+    return NextResponse.json(
+      { error: "failed to fetch candles", code, timeframe, message },
+      { status: 502 },
+    );
+  }
 }

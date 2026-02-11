@@ -4,8 +4,9 @@ import { getKisConfig } from "@/server/kis/config";
 import { kisRequest } from "@/server/kis/http";
 import type { Timeframe } from "@/lib/timeframe";
 import type { KisCandle, KisQuote, KisStock } from "@/server/kis/types";
-import { mockCandles, mockQuote, mockSearchStocks } from "@/server/kis/mock";
+import { mockQuote, mockSearchStocks } from "@/server/kis/mock";
 import { searchDomesticStocks } from "@/server/kis/master";
+import { getYahooCandles } from "@/server/yahoo/candles";
 
 export async function searchStocks(query: string): Promise<KisStock[]> {
   const cfg = getKisConfig();
@@ -29,10 +30,21 @@ export async function getCandles(params: {
   const cfg = getKisConfig();
   const count = params.count ?? 240;
 
-  if (!cfg.enabled) {
-    return mockCandles(params.timeframe, count, 120);
+  // Prefer Yahoo Finance for:
+  // - overseas symbols (AAPL, TSLA, etc)
+  // - domestic symbols when KIS is not configured/enabled
+  // - domestic symbols with suffixes (e.g. 005930.KS)
+  const isPlainDomesticCode = /^\d{6}$/.test(params.code);
+
+  if (!cfg.enabled || !isPlainDomesticCode) {
+    return getYahooCandles({
+      code: params.code,
+      timeframe: params.timeframe,
+      count,
+    });
   }
 
+  // KIS (domestic-only)
   if (params.timeframe === "1D" || params.timeframe === "1W" || params.timeframe === "1M") {
     return getDailyLikeCandles(params.code, params.timeframe, count);
   }

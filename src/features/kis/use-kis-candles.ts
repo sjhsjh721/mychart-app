@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { CandlestickData, UTCTimestamp } from "lightweight-charts";
+import type { CandlestickData, HistogramData, UTCTimestamp } from "lightweight-charts";
 import type { Timeframe } from "@/lib/timeframe";
 
 type ApiCandle = {
@@ -25,7 +25,8 @@ export function useKisCandles(params: {
   count?: number;
   enabled?: boolean;
 }) {
-  const [data, setData] = useState<CandlestickData[]>([]);
+  const [candles, setCandles] = useState<CandlestickData[]>([]);
+  const [volume, setVolume] = useState<HistogramData[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -35,7 +36,8 @@ export function useKisCandles(params: {
     if (!enabled) {
       setLoading(false);
       setError(null);
-      setData([]);
+      setCandles([]);
+      setVolume([]);
       return;
     }
 
@@ -61,7 +63,8 @@ export function useKisCandles(params: {
         }
 
         const json = (await res.json()) as CandlesResponse;
-        const mapped = (json.candles ?? []).map(
+
+        const mappedCandles = (json.candles ?? []).map(
           (c) =>
             ({
               time: c.time as UTCTimestamp,
@@ -72,7 +75,17 @@ export function useKisCandles(params: {
             }) satisfies CandlestickData,
         );
 
-        setData(mapped);
+        const mappedVolume = (json.candles ?? []).map((c) => {
+          const up = c.close >= c.open;
+          return {
+            time: c.time as UTCTimestamp,
+            value: c.volume ?? 0,
+            color: up ? "rgba(0, 200, 83, 0.6)" : "rgba(255, 23, 68, 0.6)",
+          } satisfies HistogramData;
+        });
+
+        setCandles(mappedCandles);
+        setVolume(mappedVolume);
       } catch (e) {
         if ((e as Error).name === "AbortError") return;
         setError(e instanceof Error ? e.message : String(e));
@@ -88,5 +101,5 @@ export function useKisCandles(params: {
     };
   }, [params.code, params.timeframe, params.count, params.enabled]);
 
-  return { data, loading, error };
+  return { candles, volume, loading, error };
 }
