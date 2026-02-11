@@ -59,6 +59,19 @@ export function CandlestickChart({
         timeVisible: true,
         secondsVisible: false,
       },
+      localization: {
+        locale: "ko-KR",
+        // KST (UTC+9) 타임존으로 시간 포맷팅
+        timeFormatter: (timestamp: number) => {
+          const date = new Date(timestamp * 1000);
+          return date.toLocaleString("ko-KR", {
+            timeZone: "Asia/Seoul",
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: false,
+          });
+        },
+      },
       handleScroll: true,
       handleScale: true,
     });
@@ -135,7 +148,9 @@ export function CandlestickChart({
     if (!candleSeriesRef.current || !volumeSeriesRef.current || !chartRef.current) return;
     candleSeriesRef.current.setData(candles);
     volumeSeriesRef.current.setData(volume ?? []);
+    // 종목 변경 시 전체 차트 스케일 리셋
     chartRef.current.timeScale().fitContent();
+    chartRef.current.priceScale("right").applyOptions({ autoScale: true });
   }, [candles, volume]);
 
   return (
