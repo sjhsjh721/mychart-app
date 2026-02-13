@@ -15,7 +15,7 @@ import {
   calculateSMA,
   calculateRSI,
   calculateBollingerBands,
-  // calculateIchimoku, // TODO: 일목균형표 토글 UI 추가 시 사용
+  calculateIchimoku,
 } from "@/features/chart/lib/indicators";
 
 const MA_COLORS: Record<5 | 20 | 60 | 120, string> = {
@@ -46,6 +46,12 @@ export function CandlestickChart({
   const bbLowerRef = useRef<ISeriesApi<"Line"> | null>(null);
   // RSI
   const rsiSeriesRef = useRef<ISeriesApi<"Line"> | null>(null);
+  // 일목균형표
+  const ichimokuTenkanRef = useRef<ISeriesApi<"Line"> | null>(null);
+  const ichimokuKijunRef = useRef<ISeriesApi<"Line"> | null>(null);
+  const ichimokuSpanARef = useRef<ISeriesApi<"Line"> | null>(null);
+  const ichimokuSpanBRef = useRef<ISeriesApi<"Line"> | null>(null);
+  const ichimokuChikouRef = useRef<ISeriesApi<"Line"> | null>(null);
   const [hoverText, setHoverText] = useState<string>("");
 
   const lastClose = useMemo(() => {
@@ -59,6 +65,7 @@ export function CandlestickChart({
   const ma120 = useMemo(() => calculateSMA(candles, 120), [candles]);
   const bollingerBands = useMemo(() => calculateBollingerBands(candles, 20, 2), [candles]);
   const rsi = useMemo(() => calculateRSI(candles, 14), [candles]);
+  const ichimoku = useMemo(() => calculateIchimoku(candles), [candles]);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -206,6 +213,53 @@ export function CandlestickChart({
       borderColor: "rgba(148, 163, 184, 0.2)",
     });
 
+    // 일목균형표
+    const ichimokuTenkan = chart.addLineSeries({
+      title: "전환선",
+      color: "#ef4444", // red
+      lineWidth: 1,
+      priceLineVisible: false,
+      lastValueVisible: false,
+      crosshairMarkerVisible: false,
+    });
+
+    const ichimokuKijun = chart.addLineSeries({
+      title: "기준선",
+      color: "#3b82f6", // blue
+      lineWidth: 1,
+      priceLineVisible: false,
+      lastValueVisible: false,
+      crosshairMarkerVisible: false,
+    });
+
+    const ichimokuSpanA = chart.addLineSeries({
+      title: "선행A",
+      color: "#22c55e", // green
+      lineWidth: 1,
+      priceLineVisible: false,
+      lastValueVisible: false,
+      crosshairMarkerVisible: false,
+    });
+
+    const ichimokuSpanB = chart.addLineSeries({
+      title: "선행B",
+      color: "#f97316", // orange
+      lineWidth: 1,
+      priceLineVisible: false,
+      lastValueVisible: false,
+      crosshairMarkerVisible: false,
+    });
+
+    const ichimokuChikou = chart.addLineSeries({
+      title: "후행스팬",
+      color: "#a855f7", // purple
+      lineWidth: 1,
+      lineStyle: 2, // dashed
+      priceLineVisible: false,
+      lastValueVisible: false,
+      crosshairMarkerVisible: false,
+    });
+
     chart.priceScale("volume").applyOptions({
       scaleMargins: {
         top: 0.75,
@@ -225,6 +279,11 @@ export function CandlestickChart({
     bbMiddleRef.current = bbMiddleSeries;
     bbLowerRef.current = bbLowerSeries;
     rsiSeriesRef.current = rsiSeries;
+    ichimokuTenkanRef.current = ichimokuTenkan;
+    ichimokuKijunRef.current = ichimokuKijun;
+    ichimokuSpanARef.current = ichimokuSpanA;
+    ichimokuSpanBRef.current = ichimokuSpanB;
+    ichimokuChikouRef.current = ichimokuChikou;
 
     candleSeries.setData(candles);
     volumeSeries.setData(volume ?? []);
@@ -236,6 +295,11 @@ export function CandlestickChart({
     bbMiddleSeries.setData(bollingerBands.middle);
     bbLowerSeries.setData(bollingerBands.lower);
     rsiSeries.setData(rsi);
+    ichimokuTenkan.setData(ichimoku.tenkanSen);
+    ichimokuKijun.setData(ichimoku.kijunSen);
+    ichimokuSpanA.setData(ichimoku.senkouSpanA);
+    ichimokuSpanB.setData(ichimoku.senkouSpanB);
+    ichimokuChikou.setData(ichimoku.chikouSpan);
     chart.timeScale().fitContent();
 
     const ro = new ResizeObserver(() => {
@@ -280,6 +344,11 @@ export function CandlestickChart({
       bbMiddleRef.current = null;
       bbLowerRef.current = null;
       rsiSeriesRef.current = null;
+      ichimokuTenkanRef.current = null;
+      ichimokuKijunRef.current = null;
+      ichimokuSpanARef.current = null;
+      ichimokuSpanBRef.current = null;
+      ichimokuChikouRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -302,11 +371,16 @@ export function CandlestickChart({
     bbMiddleRef.current?.setData(bollingerBands.middle);
     bbLowerRef.current?.setData(bollingerBands.lower);
     rsiSeriesRef.current?.setData(rsi);
+    ichimokuTenkanRef.current?.setData(ichimoku.tenkanSen);
+    ichimokuKijunRef.current?.setData(ichimoku.kijunSen);
+    ichimokuSpanARef.current?.setData(ichimoku.senkouSpanA);
+    ichimokuSpanBRef.current?.setData(ichimoku.senkouSpanB);
+    ichimokuChikouRef.current?.setData(ichimoku.chikouSpan);
 
     // 종목 변경 시 전체 차트 스케일 리셋
     chart.timeScale().fitContent();
     chart.priceScale("right").applyOptions({ autoScale: true });
-  }, [candles, volume, ma5, ma20, ma60, ma120, bollingerBands, rsi]);
+  }, [candles, volume, ma5, ma20, ma60, ma120, bollingerBands, rsi, ichimoku]);
 
   return (
     <div className="relative h-full w-full">
