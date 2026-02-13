@@ -235,8 +235,9 @@ export function StockSearchModal() {
               <div className="max-h-[360px] overflow-auto rounded-md border">
                 {mergedResults.map((s) => (
                   <button
+                    type="button"
                     key={s.code}
-                    className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-sm hover:bg-muted"
+                    className="flex w-full cursor-pointer items-center justify-between gap-3 px-3 py-2 text-left text-sm hover:bg-muted active:bg-muted/80"
                     onClick={() => onPick(s)}
                   >
                     <div className="min-w-0">
