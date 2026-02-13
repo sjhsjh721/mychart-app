@@ -17,12 +17,15 @@ import {
   calculateBollingerBands,
   calculateIchimoku,
 } from "@/features/chart/lib/indicators";
+import { useIndicatorStore } from "@/store/indicator-store";
 
-const MA_COLORS: Record<5 | 20 | 60 | 120, string> = {
+const MA_COLORS: Record<number, string> = {
   5: "#f59e0b", // amber
+  10: "#eab308", // yellow
   20: "#22c55e", // green
   60: "#3b82f6", // blue
   120: "#a855f7", // purple
+  200: "#ec4899", // pink
 };
 
 export function CandlestickChart({
@@ -32,6 +35,7 @@ export function CandlestickChart({
   candles: CandlestickData[];
   volume?: HistogramData[];
 }) {
+  const indicators = useIndicatorStore();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const candleSeriesRef = useRef<ISeriesApi<"Candlestick"> | null>(null);
@@ -59,13 +63,65 @@ export function CandlestickChart({
     return last ? last.close : undefined;
   }, [candles]);
 
-  const ma5 = useMemo(() => calculateSMA(candles, 5), [candles]);
-  const ma20 = useMemo(() => calculateSMA(candles, 20), [candles]);
-  const ma60 = useMemo(() => calculateSMA(candles, 60), [candles]);
-  const ma120 = useMemo(() => calculateSMA(candles, 120), [candles]);
-  const bollingerBands = useMemo(() => calculateBollingerBands(candles, 20, 2), [candles]);
-  const rsi = useMemo(() => calculateRSI(candles, 14), [candles]);
-  const ichimoku = useMemo(() => calculateIchimoku(candles), [candles]);
+  // MA - 설정에 따라 계산
+  const ma5 = useMemo(
+    () =>
+      indicators.ma.enabled && indicators.ma.periods.includes(5) ? calculateSMA(candles, 5) : [],
+    [candles, indicators.ma],
+  );
+  const ma20 = useMemo(
+    () =>
+      indicators.ma.enabled && indicators.ma.periods.includes(20) ? calculateSMA(candles, 20) : [],
+    [candles, indicators.ma],
+  );
+  const ma60 = useMemo(
+    () =>
+      indicators.ma.enabled && indicators.ma.periods.includes(60) ? calculateSMA(candles, 60) : [],
+    [candles, indicators.ma],
+  );
+  const ma120 = useMemo(
+    () =>
+      indicators.ma.enabled && indicators.ma.periods.includes(120)
+        ? calculateSMA(candles, 120)
+        : [],
+    [candles, indicators.ma],
+  );
+
+  // 볼린저 밴드
+  const bollingerBands = useMemo(
+    () =>
+      indicators.bollinger.enabled
+        ? calculateBollingerBands(candles, indicators.bollinger.period, indicators.bollinger.stdDev)
+        : { upper: [], middle: [], lower: [] },
+    [candles, indicators.bollinger],
+  );
+
+  // RSI
+  const rsi = useMemo(
+    () => (indicators.rsi.enabled ? calculateRSI(candles, indicators.rsi.period) : []),
+    [candles, indicators.rsi],
+  );
+
+  // 일목균형표
+  const ichimoku = useMemo(
+    () =>
+      indicators.ichimoku.enabled
+        ? calculateIchimoku(
+            candles,
+            indicators.ichimoku.tenkanPeriod,
+            indicators.ichimoku.kijunPeriod,
+            indicators.ichimoku.senkouBPeriod,
+            indicators.ichimoku.displacement,
+          )
+        : { tenkanSen: [], kijunSen: [], senkouSpanA: [], senkouSpanB: [], chikouSpan: [] },
+    [candles, indicators.ichimoku],
+  );
+
+  // 거래량
+  const volumeData = useMemo(
+    () => (indicators.volume.enabled ? (volume ?? []) : []),
+    [volume, indicators.volume.enabled],
+  );
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -286,7 +342,7 @@ export function CandlestickChart({
     ichimokuChikouRef.current = ichimokuChikou;
 
     candleSeries.setData(candles);
-    volumeSeries.setData(volume ?? []);
+    volumeSeries.setData(volumeData);
     ma5Series.setData(ma5);
     ma20Series.setData(ma20);
     ma60Series.setData(ma60);
@@ -361,7 +417,7 @@ export function CandlestickChart({
     if (!chart || !candleSeries || !volumeSeries) return;
 
     candleSeries.setData(candles);
-    volumeSeries.setData(volume ?? []);
+    volumeSeries.setData(volumeData);
 
     ma5SeriesRef.current?.setData(ma5);
     ma20SeriesRef.current?.setData(ma20);

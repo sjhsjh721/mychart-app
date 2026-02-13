@@ -1,6 +1,7 @@
 "use client";
 
 import { CandlestickChart } from "@/features/chart/components/candlestick-chart";
+import { IndicatorPanel } from "@/features/chart/components/indicator-panel";
 import { PeriodSelector } from "@/features/chart/components/period-selector";
 import { TimeframeSelector } from "@/features/chart/components/timeframe-selector";
 import { useKisCandles } from "@/features/kis/use-kis-candles";
@@ -34,6 +35,8 @@ export default function HomePage() {
             </div>
           </div>
           <div className="flex flex-wrap items-center justify-center gap-2 md:justify-end">
+            <IndicatorPanel />
+            <div className="h-4 w-px bg-border hidden md:block" />
             <TimeframeSelector value={timeframe} onChange={setTimeframe} />
             <div className="h-4 w-px bg-border hidden md:block" />
             <PeriodSelector value={period} onChange={setPeriod} />
