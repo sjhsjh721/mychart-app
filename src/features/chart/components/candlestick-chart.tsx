@@ -41,9 +41,11 @@ export function CandlestickChart({
   const candleSeriesRef = useRef<ISeriesApi<"Candlestick"> | null>(null);
   const volumeSeriesRef = useRef<ISeriesApi<"Histogram"> | null>(null);
   const ma5SeriesRef = useRef<ISeriesApi<"Line"> | null>(null);
+  const ma10SeriesRef = useRef<ISeriesApi<"Line"> | null>(null);
   const ma20SeriesRef = useRef<ISeriesApi<"Line"> | null>(null);
   const ma60SeriesRef = useRef<ISeriesApi<"Line"> | null>(null);
   const ma120SeriesRef = useRef<ISeriesApi<"Line"> | null>(null);
+  const ma200SeriesRef = useRef<ISeriesApi<"Line"> | null>(null);
   // 볼린저 밴드
   const bbUpperRef = useRef<ISeriesApi<"Line"> | null>(null);
   const bbMiddleRef = useRef<ISeriesApi<"Line"> | null>(null);
@@ -69,6 +71,11 @@ export function CandlestickChart({
       indicators.ma.enabled && indicators.ma.periods.includes(5) ? calculateSMA(candles, 5) : [],
     [candles, indicators.ma],
   );
+  const ma10 = useMemo(
+    () =>
+      indicators.ma.enabled && indicators.ma.periods.includes(10) ? calculateSMA(candles, 10) : [],
+    [candles, indicators.ma],
+  );
   const ma20 = useMemo(
     () =>
       indicators.ma.enabled && indicators.ma.periods.includes(20) ? calculateSMA(candles, 20) : [],
@@ -83,6 +90,13 @@ export function CandlestickChart({
     () =>
       indicators.ma.enabled && indicators.ma.periods.includes(120)
         ? calculateSMA(candles, 120)
+        : [],
+    [candles, indicators.ma],
+  );
+  const ma200 = useMemo(
+    () =>
+      indicators.ma.enabled && indicators.ma.periods.includes(200)
+        ? calculateSMA(candles, 200)
         : [],
     [candles, indicators.ma],
   );
@@ -192,6 +206,15 @@ export function CandlestickChart({
       crosshairMarkerVisible: false,
     });
 
+    const ma10Series = chart.addLineSeries({
+      title: "MA10",
+      color: MA_COLORS[10],
+      lineWidth: 1,
+      priceLineVisible: false,
+      lastValueVisible: false,
+      crosshairMarkerVisible: false,
+    });
+
     const ma20Series = chart.addLineSeries({
       title: "MA20",
       color: MA_COLORS[20],
@@ -213,6 +236,15 @@ export function CandlestickChart({
     const ma120Series = chart.addLineSeries({
       title: "MA120",
       color: MA_COLORS[120],
+      lineWidth: 1,
+      priceLineVisible: false,
+      lastValueVisible: false,
+      crosshairMarkerVisible: false,
+    });
+
+    const ma200Series = chart.addLineSeries({
+      title: "MA200",
+      color: MA_COLORS[200],
       lineWidth: 1,
       priceLineVisible: false,
       lastValueVisible: false,
@@ -328,9 +360,11 @@ export function CandlestickChart({
     candleSeriesRef.current = candleSeries;
     volumeSeriesRef.current = volumeSeries;
     ma5SeriesRef.current = ma5Series;
+    ma10SeriesRef.current = ma10Series;
     ma20SeriesRef.current = ma20Series;
     ma60SeriesRef.current = ma60Series;
     ma120SeriesRef.current = ma120Series;
+    ma200SeriesRef.current = ma200Series;
     bbUpperRef.current = bbUpperSeries;
     bbMiddleRef.current = bbMiddleSeries;
     bbLowerRef.current = bbLowerSeries;
@@ -344,9 +378,11 @@ export function CandlestickChart({
     candleSeries.setData(candles);
     volumeSeries.setData(volumeData);
     ma5Series.setData(ma5);
+    ma10Series.setData(ma10);
     ma20Series.setData(ma20);
     ma60Series.setData(ma60);
     ma120Series.setData(ma120);
+    ma200Series.setData(ma200);
     bbUpperSeries.setData(bollingerBands.upper);
     bbMiddleSeries.setData(bollingerBands.middle);
     bbLowerSeries.setData(bollingerBands.lower);
@@ -393,9 +429,11 @@ export function CandlestickChart({
       candleSeriesRef.current = null;
       volumeSeriesRef.current = null;
       ma5SeriesRef.current = null;
+      ma10SeriesRef.current = null;
       ma20SeriesRef.current = null;
       ma60SeriesRef.current = null;
       ma120SeriesRef.current = null;
+      ma200SeriesRef.current = null;
       bbUpperRef.current = null;
       bbMiddleRef.current = null;
       bbLowerRef.current = null;
@@ -420,9 +458,11 @@ export function CandlestickChart({
     volumeSeries.setData(volumeData);
 
     ma5SeriesRef.current?.setData(ma5);
+    ma10SeriesRef.current?.setData(ma10);
     ma20SeriesRef.current?.setData(ma20);
     ma60SeriesRef.current?.setData(ma60);
     ma120SeriesRef.current?.setData(ma120);
+    ma200SeriesRef.current?.setData(ma200);
     bbUpperRef.current?.setData(bollingerBands.upper);
     bbMiddleRef.current?.setData(bollingerBands.middle);
     bbLowerRef.current?.setData(bollingerBands.lower);
@@ -436,7 +476,44 @@ export function CandlestickChart({
     // 종목 변경 시 전체 차트 스케일 리셋
     chart.timeScale().fitContent();
     chart.priceScale("right").applyOptions({ autoScale: true });
-  }, [candles, volume, ma5, ma20, ma60, ma120, bollingerBands, rsi, ichimoku]);
+  }, [candles, volume, ma5, ma10, ma20, ma60, ma120, ma200, bollingerBands, rsi, ichimoku]);
+
+  // 지표 visible 토글
+  useEffect(() => {
+    // MA
+    ma5SeriesRef.current?.applyOptions({
+      visible: indicators.ma.enabled && indicators.ma.periods.includes(5),
+    });
+    ma10SeriesRef.current?.applyOptions({
+      visible: indicators.ma.enabled && indicators.ma.periods.includes(10),
+    });
+    ma20SeriesRef.current?.applyOptions({
+      visible: indicators.ma.enabled && indicators.ma.periods.includes(20),
+    });
+    ma60SeriesRef.current?.applyOptions({
+      visible: indicators.ma.enabled && indicators.ma.periods.includes(60),
+    });
+    ma120SeriesRef.current?.applyOptions({
+      visible: indicators.ma.enabled && indicators.ma.periods.includes(120),
+    });
+    ma200SeriesRef.current?.applyOptions({
+      visible: indicators.ma.enabled && indicators.ma.periods.includes(200),
+    });
+    // 볼린저 밴드
+    bbUpperRef.current?.applyOptions({ visible: indicators.bollinger.enabled });
+    bbMiddleRef.current?.applyOptions({ visible: indicators.bollinger.enabled });
+    bbLowerRef.current?.applyOptions({ visible: indicators.bollinger.enabled });
+    // RSI
+    rsiSeriesRef.current?.applyOptions({ visible: indicators.rsi.enabled });
+    // 일목균형표
+    ichimokuTenkanRef.current?.applyOptions({ visible: indicators.ichimoku.enabled });
+    ichimokuKijunRef.current?.applyOptions({ visible: indicators.ichimoku.enabled });
+    ichimokuSpanARef.current?.applyOptions({ visible: indicators.ichimoku.enabled });
+    ichimokuSpanBRef.current?.applyOptions({ visible: indicators.ichimoku.enabled });
+    ichimokuChikouRef.current?.applyOptions({ visible: indicators.ichimoku.enabled });
+    // 거래량
+    volumeSeriesRef.current?.applyOptions({ visible: indicators.volume.enabled });
+  }, [indicators]);
 
   return (
     <div className="relative h-full w-full">
