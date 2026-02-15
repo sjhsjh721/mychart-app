@@ -205,7 +205,13 @@ export function StockSearchModal() {
             <div className="mb-2 text-xs font-medium text-muted-foreground">최근 검색</div>
             <div className="flex flex-wrap gap-2">
               {recents.map((s) => (
-                <Button key={s.code} type="button" variant="secondary" size="sm" onClick={() => onPick(s)}>
+                <Button
+                  key={s.code}
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => onPick(s)}
+                >
                   {s.name ? `${s.name} (${s.code})` : s.code}
                 </Button>
               ))}
@@ -218,7 +224,13 @@ export function StockSearchModal() {
             <div className="mb-2 text-xs font-medium text-muted-foreground">인기 종목</div>
             <div className="flex flex-wrap gap-2">
               {POPULAR.map((s) => (
-                <Button key={s.code} type="button" variant="outline" size="sm" onClick={() => onPick(s)}>
+                <Button
+                  key={s.code}
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onPick(s)}
+                >
                   {s.name ? `${s.name} (${s.code})` : s.code}
                 </Button>
               ))}
