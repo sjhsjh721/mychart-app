@@ -27,7 +27,7 @@ export function IndicatorPanel() {
       </Button>
 
       {open && (
-        <div className="absolute left-0 top-full z-50 mt-1 w-80 rounded-lg border bg-background p-4 shadow-xl">
+        <div className="absolute left-0 bottom-full z-50 mb-1 w-80 rounded-lg border bg-background p-4 shadow-xl">
           <div className="mb-3 flex items-center justify-between">
             <h3 className="font-semibold">지표 설정</h3>
             <button
