@@ -516,7 +516,7 @@ export function CandlestickChart({
   }, [indicators]);
 
   return (
-    <div className="relative h-full w-full">
+    <div className="relative isolate h-full w-full">
       <div className="pointer-events-none absolute left-3 top-3 z-10 rounded-md bg-background/70 px-2 py-1 text-xs text-muted-foreground backdrop-blur">
         {hoverText || (lastClose ? `Last: ${lastClose}` : "")}
       </div>

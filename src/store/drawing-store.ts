@@ -125,21 +125,21 @@ export interface DrawingState {
   // Actions
   setActiveTool: (tool: DrawingTool | null) => void;
   selectDrawing: (id: string | null) => void;
-  
+
   // Drawing CRUD
   addDrawing: (stockCode: string, drawing: Drawing) => void;
   updateDrawing: (stockCode: string, id: string, updates: Partial<Drawing>) => void;
   deleteDrawing: (stockCode: string, id: string) => void;
   clearDrawings: (stockCode: string) => void;
-  
+
   // Drawing state
   setIsDrawing: (isDrawing: boolean) => void;
   addTempPoint: (point: Point) => void;
   clearTempPoints: () => void;
-  
+
   // Style
   setDefaultStyle: (style: Partial<DrawingStyle>) => void;
-  
+
   // Getters
   getDrawings: (stockCode: string) => Drawing[];
 }
@@ -180,7 +180,7 @@ export const useDrawingStore = create<DrawingState>()(
           drawings: {
             ...state.drawings,
             [stockCode]: (state.drawings[stockCode] || []).map((d) =>
-              d.id === id ? ({ ...d, ...updates, updatedAt: Date.now() } as Drawing) : d
+              d.id === id ? ({ ...d, ...updates, updatedAt: Date.now() } as Drawing) : d,
             ),
           },
         })),
@@ -219,8 +219,8 @@ export const useDrawingStore = create<DrawingState>()(
         drawings: state.drawings,
         defaultStyle: state.defaultStyle,
       }),
-    }
-  )
+    },
+  ),
 );
 
 // ==================== Utility ====================

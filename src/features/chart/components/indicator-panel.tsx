@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useIndicatorStore } from "@/store/indicator-store";
 import { Button } from "@/components/ui/button";
 
@@ -19,15 +19,44 @@ export function IndicatorPanel() {
     toggleIndicator,
   } = useIndicatorStore();
 
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  // 외부 클릭 시 닫기
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (
+        panelRef.current &&
+        !panelRef.current.contains(e.target as Node) &&
+        btnRef.current &&
+        !btnRef.current.contains(e.target as Node)
+      ) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+
   return (
     <div className="relative">
-      <Button variant="outline" size="sm" onClick={() => setOpen(!open)} className="gap-1">
+      <Button
+        ref={btnRef}
+        variant="outline"
+        size="sm"
+        onClick={() => setOpen(!open)}
+        className="gap-1"
+      >
         <span className="text-xs">📊</span>
         지표
       </Button>
 
       {open && (
-        <div className="absolute left-0 bottom-full z-50 mb-1 w-80 rounded-lg border bg-background p-4 shadow-xl">
+        <div
+          ref={panelRef}
+          className="fixed right-4 top-14 z-50 max-h-[calc(100dvh-4rem)] w-80 overflow-y-auto rounded-lg border bg-background p-4 shadow-xl md:absolute md:right-auto md:left-0 md:top-full md:mt-1"
+        >
           <div className="mb-3 flex items-center justify-between">
             <h3 className="font-semibold">지표 설정</h3>
             <button
