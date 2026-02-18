@@ -87,12 +87,12 @@ supabase/                 # Config + migrations
 ## COMMANDS
 
 ```bash
-npm run dev          # Next.js dev server (localhost:3000)
-npm run build        # Production build
-npm run lint         # ESLint check
-npm run lint:fix     # ESLint autofix
-npm run format       # Prettier write
-npm run format:check # Prettier check only
+pnpm dev          # Next.js dev server (localhost:3000)
+pnpm build        # Production build
+pnpm lint         # ESLint check
+pnpm lint:fix     # ESLint autofix
+pnpm format       # Prettier write
+pnpm format:check # Prettier check only
 ```
 
 No test framework configured. No CI/CD pipelines — Vercel auto-deploys from `main`.

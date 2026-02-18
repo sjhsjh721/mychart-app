@@ -177,7 +177,10 @@ export function StockSearchModal() {
         if (e.key === "Escape") closeModal();
       }}
     >
-      <div className="w-full max-w-xl rounded-lg border bg-background shadow-xl">
+      <div
+        className="w-full max-w-xl rounded-lg border bg-background shadow-xl"
+        onMouseDown={(e) => e.stopPropagation()}
+      >
         <div className="flex items-center gap-2 border-b p-3">
           <div className="text-sm font-semibold">종목 검색</div>
           <div className="ml-auto">

@@ -14,6 +14,7 @@
 ## 기능
 
 ### M1: Foundation ✅
+
 - [x] 기본 레이아웃 (다크모드)
 - [x] 캔들스틱 차트
 - [x] Yahoo Finance 데이터 연동
@@ -21,6 +22,7 @@
 - [x] 타임프레임 선택 (1m, 5m, 15m, 1h, 1D, 1W, 1M)
 
 ### M2: Indicators (진행중)
+
 - [x] 거래량 차트 ✅
 - [ ] 이동평균선 (SMA, EMA)
 - [ ] RSI
@@ -28,6 +30,7 @@
 - [ ] 일목균형표
 
 ### M3~M5 (예정)
+
 - 작도 도구 (추세선, 수평선)
 - 관심종목 & 알림
 - 해외 주식, MACD, 피보나치
@@ -36,10 +39,10 @@
 
 ```bash
 # 의존성 설치
-npm install
+pnpm install
 
 # 개발 서버 실행
-npm run dev
+pnpm dev
 ```
 
 [http://localhost:3000](http://localhost:3000)에서 확인
@@ -77,4 +80,4 @@ src/
 
 ---
 
-*Last updated: 2026-02-10*
+_Last updated: 2026-02-10_
