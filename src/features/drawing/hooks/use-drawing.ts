@@ -16,6 +16,8 @@ import {
   createDrawingId,
   type HorizontalLineDrawing,
   type TrendLineDrawing,
+  type VerticalLineDrawing,
+  type RayDrawing,
   type Point,
 } from "@/store/drawing-store";
 
@@ -63,16 +65,30 @@ export function useDrawing({ chart, series, stockCode }: UseDrawingOptions) {
         };
         addDrawing(stockCode, drawing);
         setActiveTool(null);
+      } else if (activeTool === "vertical-line") {
+        const time = param.time as number;
+        if (!time) return;
+
+        const drawing: VerticalLineDrawing = {
+          id: createDrawingId(),
+          type: "vertical-line",
+          time,
+          style: { ...defaultStyle },
+          visible: true,
+          locked: false,
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+        };
+        addDrawing(stockCode, drawing);
+        setActiveTool(null);
       } else if (activeTool === "trend-line") {
         // Trend line needs two points
         const time = param.time as number;
         const point: Point = { time, price };
 
         if (tempPoints.length === 0) {
-          // First point
           addTempPoint(point);
         } else {
-          // Second point - create trend line
           const startPoint = tempPoints[0];
           const drawing: TrendLineDrawing = {
             id: createDrawingId(),
@@ -81,6 +97,29 @@ export function useDrawing({ chart, series, stockCode }: UseDrawingOptions) {
             endPoint: point,
             extendLeft: false,
             extendRight: false,
+            style: { ...defaultStyle },
+            visible: true,
+            locked: false,
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+          };
+          addDrawing(stockCode, drawing);
+          clearTempPoints();
+          setActiveTool(null);
+        }
+      } else if (activeTool === "ray") {
+        const time = param.time as number;
+        const point: Point = { time, price };
+
+        if (tempPoints.length === 0) {
+          addTempPoint(point);
+        } else {
+          const startPoint = tempPoints[0];
+          const drawing: RayDrawing = {
+            id: createDrawingId(),
+            type: "ray",
+            startPoint,
+            endPoint: point,
             style: { ...defaultStyle },
             visible: true,
             locked: false,
