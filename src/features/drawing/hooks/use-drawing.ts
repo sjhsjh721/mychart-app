@@ -18,6 +18,7 @@ import {
   type TrendLineDrawing,
   type VerticalLineDrawing,
   type RayDrawing,
+  type FibRetracementDrawing,
   type Point,
 } from "@/store/drawing-store";
 
@@ -47,6 +48,8 @@ export function useDrawing({ chart, series, stockCode }: UseDrawingOptions) {
   const verticalLinesRef = useRef<Map<string, ISeriesApi<"Line">>>(new Map());
   // Track ray line series
   const rayLinesRef = useRef<Map<string, ISeriesApi<"Line">>>(new Map());
+  // Track fibonacci price lines (multiple per drawing)
+  const fibLinesRef = useRef<Map<string, IPriceLine[]>>(new Map());
 
   // Handle chart click
   const handleClick = useCallback(
@@ -134,6 +137,30 @@ export function useDrawing({ chart, series, stockCode }: UseDrawingOptions) {
           clearTempPoints();
           setActiveTool(null);
         }
+      } else if (activeTool === "fib-retracement") {
+        const time = param.time as number;
+        const point: Point = { time, price };
+
+        if (tempPoints.length === 0) {
+          addTempPoint(point);
+        } else {
+          const startPoint = tempPoints[0];
+          const drawing: FibRetracementDrawing = {
+            id: createDrawingId(),
+            type: "fib-retracement",
+            startPoint,
+            endPoint: point,
+            levels: [0, 0.236, 0.382, 0.5, 0.618, 1],
+            style: { ...defaultStyle },
+            visible: true,
+            locked: false,
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+          };
+          addDrawing(stockCode, drawing);
+          clearTempPoints();
+          setActiveTool(null);
+        }
       }
     },
     [
@@ -195,6 +222,20 @@ export function useDrawing({ chart, series, stockCode }: UseDrawingOptions) {
       if (!currentIds.has(id)) {
         chart.removeSeries(lineSeries);
         rayLinesRef.current.delete(id);
+      }
+    });
+
+    // Remove fibonacci lines for deleted drawings
+    fibLinesRef.current.forEach((priceLines, id) => {
+      if (!currentIds.has(id)) {
+        priceLines.forEach((line) => {
+          try {
+            series.removePriceLine(line);
+          } catch {
+            // Ignore
+          }
+        });
+        fibLinesRef.current.delete(id);
       }
     });
 
@@ -322,6 +363,53 @@ export function useDrawing({ chart, series, stockCode }: UseDrawingOptions) {
           lineSeries.setData(lineData);
           rayLinesRef.current.set(drawing.id, lineSeries);
         }
+      } else if (drawing.type === "fib-retracement" && drawing.visible) {
+        // Fibonacci Retracement: multiple horizontal lines at fib levels
+        const existingLines = fibLinesRef.current.get(drawing.id);
+
+        // Remove existing lines first (to recreate with updated values)
+        if (existingLines) {
+          existingLines.forEach((line) => {
+            try {
+              series.removePriceLine(line);
+            } catch {
+              // Ignore
+            }
+          });
+        }
+
+        const { startPoint, endPoint, levels } = drawing;
+        const priceRange = endPoint.price - startPoint.price;
+
+        // Fibonacci level colors
+        const fibColors: Record<number, string> = {
+          0: "#787B86",
+          0.236: "#F7525F",
+          0.382: "#FF9800",
+          0.5: "#4CAF50",
+          0.618: "#2196F3",
+          1: "#787B86",
+        };
+
+        const newLines: IPriceLine[] = [];
+
+        levels.forEach((level) => {
+          const price = startPoint.price + priceRange * level;
+          const color = fibColors[level] || drawing.style.color;
+          const levelPercent = (level * 100).toFixed(1);
+
+          const priceLine = series.createPriceLine({
+            price,
+            color,
+            lineWidth: 1 as LineWidth,
+            lineStyle: 2, // Dotted
+            axisLabelVisible: true,
+            title: `${levelPercent}%`,
+          });
+          newLines.push(priceLine);
+        });
+
+        fibLinesRef.current.set(drawing.id, newLines);
       }
     });
   }, [chart, series, stockCode, getDrawings]);
@@ -338,6 +426,18 @@ export function useDrawing({ chart, series, stockCode }: UseDrawingOptions) {
           }
         });
         priceLinesRef.current.clear();
+
+        // Cleanup fibonacci lines
+        fibLinesRef.current.forEach((priceLines) => {
+          priceLines.forEach((line) => {
+            try {
+              series.removePriceLine(line);
+            } catch {
+              // Ignore
+            }
+          });
+        });
+        fibLinesRef.current.clear();
       }
       if (chart) {
         trendLinesRef.current.forEach((lineSeries) => {
