@@ -43,6 +43,10 @@ export function useDrawing({ chart, series, stockCode }: UseDrawingOptions) {
   const priceLinesRef = useRef<Map<string, IPriceLine>>(new Map());
   // Track trend line series
   const trendLinesRef = useRef<Map<string, ISeriesApi<"Line">>>(new Map());
+  // Track vertical line series
+  const verticalLinesRef = useRef<Map<string, ISeriesApi<"Line">>>(new Map());
+  // Track ray line series
+  const rayLinesRef = useRef<Map<string, ISeriesApi<"Line">>>(new Map());
 
   // Handle chart click
   const handleClick = useCallback(
@@ -178,6 +182,22 @@ export function useDrawing({ chart, series, stockCode }: UseDrawingOptions) {
       }
     });
 
+    // Remove vertical lines for deleted drawings
+    verticalLinesRef.current.forEach((lineSeries, id) => {
+      if (!currentIds.has(id)) {
+        chart.removeSeries(lineSeries);
+        verticalLinesRef.current.delete(id);
+      }
+    });
+
+    // Remove ray lines for deleted drawings
+    rayLinesRef.current.forEach((lineSeries, id) => {
+      if (!currentIds.has(id)) {
+        chart.removeSeries(lineSeries);
+        rayLinesRef.current.delete(id);
+      }
+    });
+
     // Add/update drawings
     drawings.forEach((drawing) => {
       if (drawing.type === "horizontal-line" && drawing.visible) {
@@ -233,6 +253,75 @@ export function useDrawing({ chart, series, stockCode }: UseDrawingOptions) {
           lineSeries.setData(lineData);
           trendLinesRef.current.set(drawing.id, lineSeries);
         }
+      } else if (drawing.type === "vertical-line" && drawing.visible) {
+        // Vertical line: Lightweight Charts doesn't support true vertical lines natively
+        // We use createPriceLine with a marker at the specific time
+        // Alternative: Use series markers for visual indication
+        const existingMarkers = series.markers();
+        const hasMarker = existingMarkers?.some((m) => (m as { id?: string }).id === drawing.id);
+
+        if (!hasMarker) {
+          const markers = [
+            ...(existingMarkers || []),
+            {
+              id: drawing.id,
+              time: drawing.time as Time,
+              position: "aboveBar" as const,
+              color: drawing.style.color,
+              shape: "arrowDown" as const,
+              text: "│",
+            },
+          ];
+          series.setMarkers(markers);
+          verticalLinesRef.current.set(drawing.id, series as unknown as ISeriesApi<"Line">);
+        }
+      } else if (drawing.type === "ray" && drawing.visible) {
+        // Ray: extends from startPoint through endPoint to chart boundary
+        const existing = rayLinesRef.current.get(drawing.id);
+
+        const lineStyle: LineStyle =
+          drawing.style.lineStyle === "dashed" ? 1 : drawing.style.lineStyle === "dotted" ? 2 : 0;
+
+        // Calculate ray extension
+        const { startPoint, endPoint } = drawing;
+        const dx = endPoint.time - startPoint.time;
+        const dy = endPoint.price - startPoint.price;
+
+        // Extend to a far future point (1 year = ~31536000 seconds)
+        const extensionFactor = 31536000;
+        const extendedTime =
+          dx > 0 ? endPoint.time + extensionFactor : endPoint.time - extensionFactor;
+        const extendedPrice =
+          dy !== 0 && dx !== 0
+            ? endPoint.price + (dy / dx) * (dx > 0 ? extensionFactor : -extensionFactor)
+            : endPoint.price;
+
+        const lineData: LineData[] = [
+          { time: startPoint.time as Time, value: startPoint.price },
+          { time: extendedTime as Time, value: extendedPrice },
+        ];
+
+        // Sort by time (lineSeries requires ascending order)
+        lineData.sort((a, b) => (a.time as number) - (b.time as number));
+
+        if (existing) {
+          existing.applyOptions({
+            color: drawing.style.color,
+            lineWidth: drawing.style.lineWidth as LineWidth,
+            lineStyle,
+          });
+          existing.setData(lineData);
+        } else {
+          const lineSeries = chart.addLineSeries({
+            color: drawing.style.color,
+            lineWidth: drawing.style.lineWidth as LineWidth,
+            lineStyle,
+            priceLineVisible: false,
+            lastValueVisible: false,
+          });
+          lineSeries.setData(lineData);
+          rayLinesRef.current.set(drawing.id, lineSeries);
+        }
       }
     });
   }, [chart, series, stockCode, getDrawings]);
@@ -259,6 +348,24 @@ export function useDrawing({ chart, series, stockCode }: UseDrawingOptions) {
           }
         });
         trendLinesRef.current.clear();
+
+        verticalLinesRef.current.forEach((lineSeries) => {
+          try {
+            chart.removeSeries(lineSeries);
+          } catch {
+            // Ignore if already removed
+          }
+        });
+        verticalLinesRef.current.clear();
+
+        rayLinesRef.current.forEach((lineSeries) => {
+          try {
+            chart.removeSeries(lineSeries);
+          } catch {
+            // Ignore if already removed
+          }
+        });
+        rayLinesRef.current.clear();
       }
     };
   }, [chart, series, stockCode]);
