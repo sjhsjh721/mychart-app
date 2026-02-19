@@ -29,9 +29,9 @@ export type {
 export { DrawingToolbar } from "./components/drawing-toolbar";
 // export { DrawingLayer } from "./components/drawing-layer"; // TODO: M3
 
-// Hooks (TODO: M3)
-// export { useDrawing } from "./hooks/use-drawing";
+// Hooks
+export { useDrawing } from "./hooks/use-drawing";
 
-// Primitives (TODO: M3)
+// Primitives (reserved for future complex drawings)
 // export { HorizontalLinePrimitive } from "./primitives/horizontal-line";
 // export { TrendLinePrimitive } from "./primitives/trend-line";

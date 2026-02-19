@@ -18,6 +18,7 @@ import {
   calculateIchimoku,
 } from "@/features/chart/lib/indicators";
 import { useIndicatorStore } from "@/store/indicator-store";
+import { useDrawing } from "@/features/drawing";
 
 const MA_COLORS: Record<number, string> = {
   5: "#f59e0b", // amber
@@ -31,9 +32,11 @@ const MA_COLORS: Record<number, string> = {
 export function CandlestickChart({
   candles,
   volume,
+  stockCode = "005930",
 }: {
   candles: CandlestickData[];
   volume?: HistogramData[];
+  stockCode?: string;
 }) {
   const indicators = useIndicatorStore();
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -59,6 +62,13 @@ export function CandlestickChart({
   const ichimokuSpanBRef = useRef<ISeriesApi<"Line"> | null>(null);
   const ichimokuChikouRef = useRef<ISeriesApi<"Line"> | null>(null);
   const [hoverText, setHoverText] = useState<string>("");
+
+  // Drawing tools integration
+  useDrawing({
+    chart: chartRef.current,
+    series: candleSeriesRef.current,
+    stockCode,
+  });
 
   const lastClose = useMemo(() => {
     const last = candles[candles.length - 1];

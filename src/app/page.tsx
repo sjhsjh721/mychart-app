@@ -55,7 +55,7 @@ export default function HomePage() {
 
           {/* 차트 */}
           <div className="h-full min-h-[300px] flex-1 rounded-lg border bg-card md:min-h-[420px]">
-            <CandlestickChart candles={candles} volume={volume} />
+            <CandlestickChart candles={candles} volume={volume} stockCode={selectedStock.code} />
           </div>
         </div>
 
