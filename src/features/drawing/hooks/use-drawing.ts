@@ -13,6 +13,8 @@ import {
   useDrawingStore,
   createDrawingId,
   type HorizontalLineDrawing,
+  type TrendLineDrawing,
+  type Point,
 } from "@/store/drawing-store";
 
 interface UseDrawingOptions {
@@ -22,7 +24,16 @@ interface UseDrawingOptions {
 }
 
 export function useDrawing({ chart, series, stockCode }: UseDrawingOptions) {
-  const { activeTool, addDrawing, getDrawings, defaultStyle, setActiveTool } = useDrawingStore();
+  const {
+    activeTool,
+    addDrawing,
+    getDrawings,
+    defaultStyle,
+    setActiveTool,
+    tempPoints,
+    addTempPoint,
+    clearTempPoints,
+  } = useDrawingStore();
 
   // Track price lines for cleanup
   const priceLinesRef = useRef<Map<string, IPriceLine>>(new Map());
@@ -47,14 +58,48 @@ export function useDrawing({ chart, series, stockCode }: UseDrawingOptions) {
           updatedAt: Date.now(),
         };
         addDrawing(stockCode, drawing);
-
-        // Reset tool after drawing
         setActiveTool(null);
-      }
+      } else if (activeTool === "trend-line") {
+        // Trend line needs two points
+        const time = param.time as number;
+        const point: Point = { time, price };
 
-      // TODO: Handle other drawing tools
+        if (tempPoints.length === 0) {
+          // First point
+          addTempPoint(point);
+        } else {
+          // Second point - create trend line
+          const startPoint = tempPoints[0];
+          const drawing: TrendLineDrawing = {
+            id: createDrawingId(),
+            type: "trend-line",
+            startPoint,
+            endPoint: point,
+            extendLeft: false,
+            extendRight: false,
+            style: { ...defaultStyle },
+            visible: true,
+            locked: false,
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+          };
+          addDrawing(stockCode, drawing);
+          clearTempPoints();
+          setActiveTool(null);
+        }
+      }
     },
-    [activeTool, series, stockCode, addDrawing, defaultStyle, setActiveTool],
+    [
+      activeTool,
+      series,
+      stockCode,
+      addDrawing,
+      defaultStyle,
+      setActiveTool,
+      tempPoints,
+      addTempPoint,
+      clearTempPoints,
+    ],
   );
 
   // Subscribe to chart clicks
