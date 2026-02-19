@@ -4,6 +4,7 @@ import { CandlestickChart } from "@/features/chart/components/candlestick-chart"
 import { IndicatorPanel } from "@/features/chart/components/indicator-panel";
 import { PeriodSelector } from "@/features/chart/components/period-selector";
 import { TimeframeSelector } from "@/features/chart/components/timeframe-selector";
+import { DrawingToolbar } from "@/features/drawing";
 import { useKisCandles } from "@/features/kis/use-kis-candles";
 import { PERIOD_COUNTS, useChartStore } from "@/store/chart-store";
 
@@ -46,8 +47,25 @@ export default function HomePage() {
 
       {/* 차트 영역 */}
       <div className="min-h-0 flex-1 p-2 md:p-4">
-        <div className="h-full min-h-[300px] w-full rounded-lg border bg-card md:min-h-[420px]">
-          <CandlestickChart candles={candles} volume={volume} />
+        <div className="flex h-full gap-2">
+          {/* 작도 툴바 (데스크톱) */}
+          <div className="hidden md:block">
+            <DrawingToolbar stockCode={selectedStock.code} orientation="vertical" />
+          </div>
+
+          {/* 차트 */}
+          <div className="h-full min-h-[300px] flex-1 rounded-lg border bg-card md:min-h-[420px]">
+            <CandlestickChart candles={candles} volume={volume} />
+          </div>
+        </div>
+
+        {/* 작도 툴바 (모바일) */}
+        <div className="mt-2 md:hidden">
+          <DrawingToolbar
+            stockCode={selectedStock.code}
+            orientation="horizontal"
+            className="justify-center"
+          />
         </div>
       </div>
     </div>

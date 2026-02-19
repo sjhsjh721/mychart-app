@@ -25,9 +25,9 @@ export type {
   TextDrawing,
 } from "@/store/drawing-store";
 
-// Components (TODO: M3)
-// export { DrawingToolbar } from "./components/drawing-toolbar";
-// export { DrawingLayer } from "./components/drawing-layer";
+// Components
+export { DrawingToolbar } from "./components/drawing-toolbar";
+// export { DrawingLayer } from "./components/drawing-layer"; // TODO: M3
 
 // Hooks (TODO: M3)
 // export { useDrawing } from "./hooks/use-drawing";
