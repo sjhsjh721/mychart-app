@@ -5,9 +5,11 @@ import type {
   IChartApi,
   IPriceLine,
   ISeriesApi,
+  LineData,
   LineStyle,
   LineWidth,
   MouseEventParams,
+  Time,
 } from "lightweight-charts";
 import {
   useDrawingStore,
@@ -37,6 +39,8 @@ export function useDrawing({ chart, series, stockCode }: UseDrawingOptions) {
 
   // Track price lines for cleanup
   const priceLinesRef = useRef<Map<string, IPriceLine>>(new Map());
+  // Track trend line series
+  const trendLinesRef = useRef<Map<string, ISeriesApi<"Line">>>(new Map());
 
   // Handle chart click
   const handleClick = useCallback(
@@ -112,9 +116,9 @@ export function useDrawing({ chart, series, stockCode }: UseDrawingOptions) {
     };
   }, [chart, handleClick]);
 
-  // Sync drawings with chart price lines
+  // Sync drawings with chart
   useEffect(() => {
-    if (!series) return;
+    if (!series || !chart) return;
 
     const drawings = getDrawings(stockCode);
     const currentIds = new Set(drawings.map((d) => d.id));
@@ -127,7 +131,15 @@ export function useDrawing({ chart, series, stockCode }: UseDrawingOptions) {
       }
     });
 
-    // Add/update price lines for current drawings
+    // Remove trend lines for deleted drawings
+    trendLinesRef.current.forEach((lineSeries, id) => {
+      if (!currentIds.has(id)) {
+        chart.removeSeries(lineSeries);
+        trendLinesRef.current.delete(id);
+      }
+    });
+
+    // Add/update drawings
     drawings.forEach((drawing) => {
       if (drawing.type === "horizontal-line" && drawing.visible) {
         const existing = priceLinesRef.current.get(drawing.id);
@@ -136,7 +148,6 @@ export function useDrawing({ chart, series, stockCode }: UseDrawingOptions) {
           drawing.style.lineStyle === "dashed" ? 1 : drawing.style.lineStyle === "dotted" ? 2 : 0;
 
         if (existing) {
-          // Update existing price line
           existing.applyOptions({
             price: drawing.price,
             color: drawing.style.color,
@@ -144,7 +155,6 @@ export function useDrawing({ chart, series, stockCode }: UseDrawingOptions) {
             lineStyle,
           });
         } else {
-          // Create new price line
           const priceLine = series.createPriceLine({
             price: drawing.price,
             color: drawing.style.color,
@@ -155,9 +165,38 @@ export function useDrawing({ chart, series, stockCode }: UseDrawingOptions) {
           });
           priceLinesRef.current.set(drawing.id, priceLine);
         }
+      } else if (drawing.type === "trend-line" && drawing.visible) {
+        const existing = trendLinesRef.current.get(drawing.id);
+
+        const lineStyle: LineStyle =
+          drawing.style.lineStyle === "dashed" ? 1 : drawing.style.lineStyle === "dotted" ? 2 : 0;
+
+        const lineData: LineData[] = [
+          { time: drawing.startPoint.time as Time, value: drawing.startPoint.price },
+          { time: drawing.endPoint.time as Time, value: drawing.endPoint.price },
+        ];
+
+        if (existing) {
+          existing.applyOptions({
+            color: drawing.style.color,
+            lineWidth: drawing.style.lineWidth as LineWidth,
+            lineStyle,
+          });
+          existing.setData(lineData);
+        } else {
+          const lineSeries = chart.addLineSeries({
+            color: drawing.style.color,
+            lineWidth: drawing.style.lineWidth as LineWidth,
+            lineStyle,
+            priceLineVisible: false,
+            lastValueVisible: false,
+          });
+          lineSeries.setData(lineData);
+          trendLinesRef.current.set(drawing.id, lineSeries);
+        }
       }
     });
-  }, [series, stockCode, getDrawings]);
+  }, [chart, series, stockCode, getDrawings]);
 
   // Cleanup on unmount or stock change
   useEffect(() => {
@@ -172,8 +211,18 @@ export function useDrawing({ chart, series, stockCode }: UseDrawingOptions) {
         });
         priceLinesRef.current.clear();
       }
+      if (chart) {
+        trendLinesRef.current.forEach((lineSeries) => {
+          try {
+            chart.removeSeries(lineSeries);
+          } catch {
+            // Ignore if already removed
+          }
+        });
+        trendLinesRef.current.clear();
+      }
     };
-  }, [series, stockCode]);
+  }, [chart, series, stockCode]);
 
   return {
     activeTool,
