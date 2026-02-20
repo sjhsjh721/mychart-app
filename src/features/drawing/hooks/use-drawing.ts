@@ -31,8 +31,11 @@ interface UseDrawingOptions {
 export function useDrawing({ chart, series, stockCode }: UseDrawingOptions) {
   const {
     activeTool,
+    selectedId,
     addDrawing,
     getDrawings,
+    deleteDrawing,
+    selectDrawing,
     defaultStyle,
     setActiveTool,
     tempPoints,
@@ -414,6 +417,55 @@ export function useDrawing({ chart, series, stockCode }: UseDrawingOptions) {
     });
   }, [chart, series, stockCode, getDrawings]);
 
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore if typing in input
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        return;
+      }
+
+      switch (e.key) {
+        case "Delete":
+        case "Backspace":
+          // Delete selected drawing
+          if (selectedId) {
+            deleteDrawing(stockCode, selectedId);
+          }
+          break;
+        case "Escape":
+          // Cancel current tool or deselect
+          setActiveTool(null);
+          selectDrawing(null);
+          clearTempPoints();
+          break;
+        case "v":
+        case "V":
+          setActiveTool("select");
+          break;
+        case "h":
+        case "H":
+          setActiveTool("horizontal-line");
+          break;
+        case "t":
+        case "T":
+          setActiveTool("trend-line");
+          break;
+        case "f":
+        case "F":
+          setActiveTool("fib-retracement");
+          break;
+        case "r":
+        case "R":
+          setActiveTool("rectangle");
+          break;
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [selectedId, stockCode, deleteDrawing, selectDrawing, setActiveTool, clearTempPoints]);
+
   // Cleanup on unmount or stock change
   useEffect(() => {
     return () => {
@@ -472,6 +524,9 @@ export function useDrawing({ chart, series, stockCode }: UseDrawingOptions) {
 
   return {
     activeTool,
+    selectedId,
     drawings: getDrawings(stockCode),
+    selectDrawing,
+    deleteDrawing: (id: string) => deleteDrawing(stockCode, id),
   };
 }
