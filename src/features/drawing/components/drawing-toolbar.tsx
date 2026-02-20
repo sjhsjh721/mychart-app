@@ -4,6 +4,7 @@ import { useDrawingStore, type DrawingTool } from "@/store/drawing-store";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Minus,
   TrendingUp,
@@ -17,6 +18,16 @@ import {
   GripVertical,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+const COLOR_PRESETS = [
+  { color: "#2962FF", name: "파랑" },
+  { color: "#FF5252", name: "빨강" },
+  { color: "#4CAF50", name: "초록" },
+  { color: "#FF9800", name: "주황" },
+  { color: "#9C27B0", name: "보라" },
+  { color: "#FFFFFF", name: "흰색" },
+  { color: "#787B86", name: "회색" },
+];
 
 interface ToolButtonProps {
   tool: DrawingTool;
@@ -53,7 +64,8 @@ export function DrawingToolbar({
   orientation = "vertical",
   className,
 }: DrawingToolbarProps) {
-  const { activeTool, setActiveTool, clearDrawings, getDrawings } = useDrawingStore();
+  const { activeTool, setActiveTool, clearDrawings, getDrawings, defaultStyle, setDefaultStyle } =
+    useDrawingStore();
   const drawingCount = getDrawings(stockCode).length;
 
   const handleToolClick = (tool: DrawingTool) => {
@@ -116,6 +128,41 @@ export function DrawingToolbar({
           orientation={isVertical ? "horizontal" : "vertical"}
           className={cn(isVertical ? "my-1" : "mx-1 h-6")}
         />
+
+        {/* 색상 선택 */}
+        <Popover>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <PopoverTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8">
+                  <div
+                    className="h-4 w-4 rounded-full border border-border"
+                    style={{ backgroundColor: defaultStyle.color }}
+                  />
+                </Button>
+              </PopoverTrigger>
+            </TooltipTrigger>
+            <TooltipContent side={isVertical ? "right" : "bottom"}>
+              <p>선 색상</p>
+            </TooltipContent>
+          </Tooltip>
+          <PopoverContent className="w-auto p-2" side={isVertical ? "right" : "bottom"}>
+            <div className="flex gap-1 flex-wrap max-w-[120px]">
+              {COLOR_PRESETS.map((preset) => (
+                <button
+                  key={preset.color}
+                  className={cn(
+                    "h-6 w-6 rounded-full border-2 transition-transform hover:scale-110",
+                    defaultStyle.color === preset.color ? "border-primary" : "border-transparent",
+                  )}
+                  style={{ backgroundColor: preset.color }}
+                  onClick={() => setDefaultStyle({ color: preset.color })}
+                  title={preset.name}
+                />
+              ))}
+            </div>
+          </PopoverContent>
+        </Popover>
 
         {/* 삭제 버튼 */}
         <Tooltip>
