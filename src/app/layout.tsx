@@ -15,8 +15,8 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "MyChart",
-  description: "Personal TradingView-like chart platform",
+  title: "MyChart - 나만의 차트",
+  description: "트레이딩뷰 스타일의 개인 차트 플랫폼",
 };
 
 export default function RootLayout({
@@ -25,7 +25,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark">
+    <html lang="ko" className="dark">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <AppShell>{children}</AppShell>
       </body>
