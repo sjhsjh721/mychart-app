@@ -19,6 +19,7 @@ import {
   type VerticalLineDrawing,
   type RayDrawing,
   type FibRetracementDrawing,
+  type TextDrawing,
   type Point,
 } from "@/store/drawing-store";
 
@@ -99,6 +100,10 @@ export function useDrawing({ chart, series, stockCode }: UseDrawingOptions) {
               distance = priceDiff;
             }
           }
+        } else if (drawing.type === "text") {
+          // Distance to text position
+          const priceDiff = Math.abs(drawing.position.price - clickPrice) / clickPrice;
+          distance = priceDiff;
         }
 
         if (distance < threshold && (!closest || distance < closest.distance)) {
@@ -230,6 +235,30 @@ export function useDrawing({ chart, series, stockCode }: UseDrawingOptions) {
           clearTempPoints();
           setActiveTool(null);
         }
+      } else if (activeTool === "text") {
+        const time = param.time as number;
+        if (!time) return;
+
+        const text = prompt("메모 내용을 입력하세요:");
+        if (!text) {
+          setActiveTool(null);
+          return;
+        }
+
+        const drawing: TextDrawing = {
+          id: createDrawingId(),
+          type: "text",
+          position: { time, price },
+          text,
+          fontSize: 12,
+          style: { ...defaultStyle },
+          visible: true,
+          locked: false,
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+        };
+        addDrawing(stockCode, drawing);
+        setActiveTool(null);
       }
     },
     [
@@ -505,6 +534,26 @@ export function useDrawing({ chart, series, stockCode }: UseDrawingOptions) {
         });
 
         fibLinesRef.current.set(drawing.id, newLines);
+      } else if (drawing.type === "text" && drawing.visible) {
+        // Text: render as series marker
+        const existingMarkers = series.markers() || [];
+        const hasMarker = existingMarkers.some((m) => (m as { id?: string }).id === drawing.id);
+
+        if (!hasMarker) {
+          const color = isSelected ? "#FFEB3B" : drawing.style.color;
+          const markers = [
+            ...existingMarkers,
+            {
+              id: drawing.id,
+              time: drawing.position.time as Time,
+              position: "aboveBar" as const,
+              color,
+              shape: "circle" as const,
+              text: drawing.text,
+            },
+          ];
+          series.setMarkers(markers);
+        }
       }
     });
   }, [chart, series, stockCode, getDrawings, selectedId]);
@@ -614,10 +663,16 @@ export function useDrawing({ chart, series, stockCode }: UseDrawingOptions) {
     };
   }, [chart, series, stockCode]);
 
+  const allDrawings = getDrawings(stockCode);
+  const textDrawings = allDrawings.filter(
+    (d): d is import("@/store/drawing-store").TextDrawing => d.type === "text",
+  );
+
   return {
     activeTool,
     selectedId,
-    drawings: getDrawings(stockCode),
+    drawings: allDrawings,
+    textDrawings,
     selectDrawing,
     deleteDrawing: (id: string) => deleteDrawing(stockCode, id),
   };
