@@ -54,13 +54,79 @@ export function useDrawing({ chart, series, stockCode }: UseDrawingOptions) {
   // Track fibonacci price lines (multiple per drawing)
   const fibLinesRef = useRef<Map<string, IPriceLine[]>>(new Map());
 
+  // Find closest drawing to click point
+  const findClosestDrawing = useCallback(
+    (clickPrice: number, clickTime: number, threshold = 0.02) => {
+      const drawings = getDrawings(stockCode);
+      let closest: { id: string; distance: number } | null = null;
+
+      for (const drawing of drawings) {
+        let distance = Infinity;
+
+        if (drawing.type === "horizontal-line") {
+          // Distance is relative price difference
+          const priceDiff = Math.abs(drawing.price - clickPrice) / clickPrice;
+          distance = priceDiff;
+        } else if (drawing.type === "trend-line" || drawing.type === "ray") {
+          // Point-to-line distance
+          const { startPoint, endPoint } = drawing;
+          const dx = endPoint.time - startPoint.time;
+          const dy = endPoint.price - startPoint.price;
+
+          if (dx === 0 && dy === 0) {
+            distance = Math.abs(clickPrice - startPoint.price) / clickPrice;
+          } else {
+            // Parametric projection
+            const t = Math.max(
+              0,
+              Math.min(
+                1,
+                ((clickTime - startPoint.time) * dx + (clickPrice - startPoint.price) * dy) /
+                  (dx * dx + dy * dy),
+              ),
+            );
+            const projPrice = startPoint.price + t * dy;
+            distance = Math.abs(clickPrice - projPrice) / clickPrice;
+          }
+        } else if (drawing.type === "fib-retracement") {
+          // Check distance to any fib level
+          const { startPoint, endPoint, levels } = drawing;
+          const priceRange = endPoint.price - startPoint.price;
+          for (const level of levels) {
+            const levelPrice = startPoint.price + priceRange * level;
+            const priceDiff = Math.abs(levelPrice - clickPrice) / clickPrice;
+            if (priceDiff < distance) {
+              distance = priceDiff;
+            }
+          }
+        }
+
+        if (distance < threshold && (!closest || distance < closest.distance)) {
+          closest = { id: drawing.id, distance };
+        }
+      }
+
+      return closest?.id || null;
+    },
+    [getDrawings, stockCode],
+  );
+
   // Handle chart click
   const handleClick = useCallback(
     (param: MouseEventParams) => {
-      if (!activeTool || activeTool === "select" || !series || !param.point) return;
+      if (!series || !param.point) return;
 
       const price = series.coordinateToPrice(param.point.y);
       if (price === null) return;
+
+      const time = param.time as number;
+
+      // Select mode: find and select closest drawing
+      if (activeTool === "select" || !activeTool) {
+        const closestId = findClosestDrawing(price, time || 0);
+        selectDrawing(closestId);
+        return;
+      }
 
       if (activeTool === "horizontal-line") {
         const drawing: HorizontalLineDrawing = {
@@ -176,6 +242,8 @@ export function useDrawing({ chart, series, stockCode }: UseDrawingOptions) {
       tempPoints,
       addTempPoint,
       clearTempPoints,
+      findClosestDrawing,
+      selectDrawing,
     ],
   );
 
@@ -242,26 +310,42 @@ export function useDrawing({ chart, series, stockCode }: UseDrawingOptions) {
       }
     });
 
+    // Helper: get highlight style for selected drawing
+    const getHighlightColor = (color: string, isSelected: boolean) => {
+      if (!isSelected) return color;
+      // Make color brighter/more saturated for selection
+      return "#FFEB3B"; // Yellow highlight
+    };
+
+    const getHighlightWidth = (width: number, isSelected: boolean): LineWidth => {
+      return (isSelected ? Math.min(width + 1, 4) : width) as LineWidth;
+    };
+
     // Add/update drawings
     drawings.forEach((drawing) => {
+      const isSelected = drawing.id === selectedId;
+
       if (drawing.type === "horizontal-line" && drawing.visible) {
         const existing = priceLinesRef.current.get(drawing.id);
 
         const lineStyle: LineStyle =
           drawing.style.lineStyle === "dashed" ? 1 : drawing.style.lineStyle === "dotted" ? 2 : 0;
 
+        const color = getHighlightColor(drawing.style.color, isSelected);
+        const lineWidth = getHighlightWidth(drawing.style.lineWidth, isSelected);
+
         if (existing) {
           existing.applyOptions({
             price: drawing.price,
-            color: drawing.style.color,
-            lineWidth: drawing.style.lineWidth as LineWidth,
+            color,
+            lineWidth,
             lineStyle,
           });
         } else {
           const priceLine = series.createPriceLine({
             price: drawing.price,
-            color: drawing.style.color,
-            lineWidth: drawing.style.lineWidth as LineWidth,
+            color,
+            lineWidth,
             lineStyle,
             axisLabelVisible: true,
             title: "",
@@ -274,6 +358,9 @@ export function useDrawing({ chart, series, stockCode }: UseDrawingOptions) {
         const lineStyle: LineStyle =
           drawing.style.lineStyle === "dashed" ? 1 : drawing.style.lineStyle === "dotted" ? 2 : 0;
 
+        const color = getHighlightColor(drawing.style.color, isSelected);
+        const lineWidth = getHighlightWidth(drawing.style.lineWidth, isSelected);
+
         const lineData: LineData[] = [
           { time: drawing.startPoint.time as Time, value: drawing.startPoint.price },
           { time: drawing.endPoint.time as Time, value: drawing.endPoint.price },
@@ -281,15 +368,15 @@ export function useDrawing({ chart, series, stockCode }: UseDrawingOptions) {
 
         if (existing) {
           existing.applyOptions({
-            color: drawing.style.color,
-            lineWidth: drawing.style.lineWidth as LineWidth,
+            color,
+            lineWidth,
             lineStyle,
           });
           existing.setData(lineData);
         } else {
           const lineSeries = chart.addLineSeries({
-            color: drawing.style.color,
-            lineWidth: drawing.style.lineWidth as LineWidth,
+            color,
+            lineWidth,
             lineStyle,
             priceLineVisible: false,
             lastValueVisible: false,
@@ -326,6 +413,9 @@ export function useDrawing({ chart, series, stockCode }: UseDrawingOptions) {
         const lineStyle: LineStyle =
           drawing.style.lineStyle === "dashed" ? 1 : drawing.style.lineStyle === "dotted" ? 2 : 0;
 
+        const color = getHighlightColor(drawing.style.color, isSelected);
+        const lineWidth = getHighlightWidth(drawing.style.lineWidth, isSelected);
+
         // Calculate ray extension
         const { startPoint, endPoint } = drawing;
         const dx = endPoint.time - startPoint.time;
@@ -350,15 +440,15 @@ export function useDrawing({ chart, series, stockCode }: UseDrawingOptions) {
 
         if (existing) {
           existing.applyOptions({
-            color: drawing.style.color,
-            lineWidth: drawing.style.lineWidth as LineWidth,
+            color,
+            lineWidth,
             lineStyle,
           });
           existing.setData(lineData);
         } else {
           const lineSeries = chart.addLineSeries({
-            color: drawing.style.color,
-            lineWidth: drawing.style.lineWidth as LineWidth,
+            color,
+            lineWidth,
             lineStyle,
             priceLineVisible: false,
             lastValueVisible: false,
@@ -395,16 +485,18 @@ export function useDrawing({ chart, series, stockCode }: UseDrawingOptions) {
         };
 
         const newLines: IPriceLine[] = [];
+        const fibLineWidth = isSelected ? (2 as LineWidth) : (1 as LineWidth);
 
         levels.forEach((level) => {
           const price = startPoint.price + priceRange * level;
-          const color = fibColors[level] || drawing.style.color;
+          const baseColor = fibColors[level] || drawing.style.color;
+          const color = isSelected ? "#FFEB3B" : baseColor;
           const levelPercent = (level * 100).toFixed(1);
 
           const priceLine = series.createPriceLine({
             price,
             color,
-            lineWidth: 1 as LineWidth,
+            lineWidth: fibLineWidth,
             lineStyle: 2, // Dotted
             axisLabelVisible: true,
             title: `${levelPercent}%`,
@@ -415,7 +507,7 @@ export function useDrawing({ chart, series, stockCode }: UseDrawingOptions) {
         fibLinesRef.current.set(drawing.id, newLines);
       }
     });
-  }, [chart, series, stockCode, getDrawings]);
+  }, [chart, series, stockCode, getDrawings, selectedId]);
 
   // Keyboard shortcuts
   useEffect(() => {
