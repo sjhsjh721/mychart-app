@@ -11,32 +11,32 @@
 ### Week 1: 인프라 + 기본 도구
 
 #### Day 1-2: 인프라 구축
-- [ ] **DRAW-001** 작도 상태 관리 (Zustand store)
+- [x] **DRAW-001** 작도 상태 관리 (Zustand store) ✅
   - 현재 선택된 도구
   - 그려진 도형 목록
   - 편집 모드 상태
-- [ ] **DRAW-002** 작도 툴바 UI
+- [x] **DRAW-002** 작도 툴바 UI ✅
   - 도구 선택 버튼
   - 모바일 반응형
-- [ ] **DRAW-003** 작도 데이터 로컬 저장
+- [x] **DRAW-003** 작도 데이터 로컬 저장 ✅
   - localStorage 활용
   - 종목별 저장
 
 #### Day 3-4: 수평선 + 추세선
-- [ ] **DRAW-004** 수평선 (HorizontalLine)
+- [x] **DRAW-004** 수평선 (HorizontalLine) ✅
   - 차트 클릭으로 추가
   - 드래그로 위치 조정
   - 가격 레이블 표시
-- [ ] **DRAW-005** 추세선 (TrendLine)
+- [x] **DRAW-005** 추세선 (TrendLine) ✅
   - 시작점-끝점 클릭
   - 각도 자유 조절
   - 연장선 옵션
 
 #### Day 5: 수직선 + 레이
-- [ ] **DRAW-006** 수직선 (VerticalLine)
+- [x] **DRAW-006** 수직선 (VerticalLine) ✅
   - 특정 시점 표시
   - 날짜 레이블
-- [ ] **DRAW-007** 레이 (Ray)
+- [x] **DRAW-007** 레이 (Ray) ✅
   - 한 방향 무한 연장
 
 ---
@@ -44,33 +44,36 @@
 ### Week 2: 고급 도구 + UX
 
 #### Day 6-7: 피보나치 + 채널
-- [ ] **DRAW-008** 피보나치 되돌림 (FibRetracement)
+- [x] **DRAW-008** 피보나치 되돌림 (FibRetracement) ✅
   - 0%, 23.6%, 38.2%, 50%, 61.8%, 100% 레벨
   - 레벨별 색상
   - 가격 표시
-- [ ] **DRAW-009** 평행 채널 (ParallelChannel)
+- [ ] **DRAW-009** 평행 채널 (ParallelChannel) → **M3.5로 이동**
   - 상단선, 하단선, 중심선
   - 너비 조절
+  - ⚠️ custom primitives (ISeriesPrimitive) 필요
 
 #### Day 8-9: 도형 도구
-- [ ] **DRAW-010** 사각형 (Rectangle)
+- [ ] **DRAW-010** 사각형 (Rectangle) → **M3.5로 이동**
   - 박스권 표시
   - 배경색 투명도
-- [ ] **DRAW-011** 삼각형 (Triangle)
+  - ⚠️ custom primitives 필요
+- [ ] **DRAW-011** 삼각형 (Triangle) → **M3.5로 이동**
   - 3점 지정
-- [ ] **DRAW-012** 텍스트 (Text)
+  - ⚠️ custom primitives 필요
+- [x] **DRAW-012** 텍스트 (Text) ✅
   - 차트에 메모 추가
 
 #### Day 10: UX 완성
-- [ ] **DRAW-013** 선택/편집 모드
+- [x] **DRAW-013** 선택/편집 모드 ✅
   - 클릭으로 도형 선택
   - 핸들로 크기/위치 조절
-- [ ] **DRAW-014** 삭제 기능
+- [x] **DRAW-014** 삭제 기능 ✅
   - 선택 후 Delete 키
-  - 우클릭 컨텍스트 메뉴
-- [ ] **DRAW-015** 도형 스타일 설정
-  - 선 색상, 두께
-  - 배경색, 투명도
+  - 키보드 단축키 (V/H/T/F/R)
+- [x] **DRAW-015** 도형 스타일 설정 ✅
+  - 선 색상 (7가지 프리셋)
+  - Popover UI
 
 ---
 
