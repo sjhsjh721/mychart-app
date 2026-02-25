@@ -21,6 +21,7 @@ import {
   type FibRetracementDrawing,
   type RectangleDrawing,
   type TriangleDrawing,
+  type ParallelChannelDrawing,
   type TextDrawing,
   type Point,
 } from "@/store/drawing-store";
@@ -60,6 +61,8 @@ export function useDrawing({ chart, series, stockCode }: UseDrawingOptions) {
   const rectangleLinesRef = useRef<Map<string, ISeriesApi<"Line">[]>>(new Map());
   // Track triangle line series (3 lines per triangle)
   const triangleLinesRef = useRef<Map<string, ISeriesApi<"Line">[]>>(new Map());
+  // Track parallel channel line series (2 parallel lines)
+  const channelLinesRef = useRef<Map<string, ISeriesApi<"Line">[]>>(new Map());
 
   // Find closest drawing to click point
   const findClosestDrawing = useCallback(
@@ -325,6 +328,51 @@ export function useDrawing({ chart, series, stockCode }: UseDrawingOptions) {
           clearTempPoints();
           setActiveTool(null);
         }
+      } else if (activeTool === "parallel-channel") {
+        // Parallel channel: 2 points for first line, then 1 point to set width
+        const time = param.time as number;
+        if (!time) return;
+        const point: Point = { time, price };
+
+        if (tempPoints.length === 0) {
+          // First point: start of first line
+          addTempPoint(point);
+        } else if (tempPoints.length === 1) {
+          // Second point: end of first line
+          addTempPoint(point);
+        } else {
+          // Third point: determines channel width (distance from line to this point)
+          const line1Start = tempPoints[0];
+          const line1End = tempPoints[1];
+
+          // Calculate perpendicular distance from third point to the line
+          const dx = line1End.time - line1Start.time;
+          const dy = line1End.price - line1Start.price;
+          const lineLength = Math.sqrt(dx * dx + dy * dy);
+
+          // Cross product gives signed distance
+          const channelWidth =
+            lineLength > 0
+              ? ((point.time - line1Start.time) * dy - (point.price - line1Start.price) * dx) /
+                lineLength
+              : price - line1Start.price;
+
+          const drawing: ParallelChannelDrawing = {
+            id: createDrawingId(),
+            type: "parallel-channel",
+            line1Start,
+            line1End,
+            channelWidth: Math.abs(channelWidth),
+            style: { ...defaultStyle },
+            visible: true,
+            locked: false,
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+          };
+          addDrawing(stockCode, drawing);
+          clearTempPoints();
+          setActiveTool(null);
+        }
       }
     },
     [
@@ -430,6 +478,20 @@ export function useDrawing({ chart, series, stockCode }: UseDrawingOptions) {
           }
         });
         triangleLinesRef.current.delete(id);
+      }
+    });
+
+    // Remove channel lines for deleted drawings
+    channelLinesRef.current.forEach((lineSeriesArr, id) => {
+      if (!currentIds.has(id)) {
+        lineSeriesArr.forEach((lineSeries) => {
+          try {
+            chart.removeSeries(lineSeries);
+          } catch {
+            // Ignore
+          }
+        });
+        channelLinesRef.current.delete(id);
       }
     });
 
@@ -789,6 +851,93 @@ export function useDrawing({ chart, series, stockCode }: UseDrawingOptions) {
           const lines = [createLine(line1Data), createLine(line2Data), createLine(line3Data)];
           triangleLinesRef.current.set(drawing.id, lines);
         }
+      } else if (drawing.type === "parallel-channel" && drawing.visible) {
+        // Parallel channel: render as 2 parallel line series
+        const existing = channelLinesRef.current.get(drawing.id);
+
+        const color = getHighlightColor(drawing.style.color, isSelected);
+        const lineWidth = getHighlightWidth(drawing.style.lineWidth, isSelected);
+        const lineStyle: LineStyle =
+          drawing.style.lineStyle === "dashed" ? 1 : drawing.style.lineStyle === "dotted" ? 2 : 0;
+
+        const { line1Start, line1End, channelWidth } = drawing;
+
+        // Calculate direction vector and perpendicular offset
+        const dx = line1End.time - line1Start.time;
+        const dy = line1End.price - line1Start.price;
+        const length = Math.sqrt(dx * dx + dy * dy);
+
+        // Perpendicular vector (normalized) * channelWidth
+        // For price-based offset, we use the price component
+        const offsetPrice = length > 0 ? (channelWidth * dx) / length : channelWidth;
+
+        // Line 1 (original)
+        const sortByTime1 = line1Start.time <= line1End.time;
+        const firstLineData: LineData[] = sortByTime1
+          ? [
+              { time: line1Start.time as Time, value: line1Start.price },
+              { time: line1End.time as Time, value: line1End.price },
+            ]
+          : [
+              { time: line1End.time as Time, value: line1End.price },
+              { time: line1Start.time as Time, value: line1Start.price },
+            ];
+
+        // Line 2 (parallel, offset by channelWidth in price)
+        const line2Start: Point = {
+          time: line1Start.time,
+          price: line1Start.price + offsetPrice,
+        };
+        const line2End: Point = {
+          time: line1End.time,
+          price: line1End.price + offsetPrice,
+        };
+
+        const sortByTime2 = line2Start.time <= line2End.time;
+        const secondLineData: LineData[] = sortByTime2
+          ? [
+              { time: line2Start.time as Time, value: line2Start.price },
+              { time: line2End.time as Time, value: line2End.price },
+            ]
+          : [
+              { time: line2End.time as Time, value: line2End.price },
+              { time: line2Start.time as Time, value: line2Start.price },
+            ];
+
+        if (existing && existing.length === 2) {
+          // Update existing lines
+          existing[0].applyOptions({ color, lineWidth, lineStyle });
+          existing[0].setData(firstLineData);
+          existing[1].applyOptions({ color, lineWidth, lineStyle });
+          existing[1].setData(secondLineData);
+        } else {
+          // Remove old if exists
+          if (existing) {
+            existing.forEach((ls) => {
+              try {
+                chart.removeSeries(ls);
+              } catch {
+                // Ignore
+              }
+            });
+          }
+
+          // Create 2 new line series
+          const createLine = (data: LineData[]) => {
+            const ls = chart.addLineSeries({
+              color,
+              lineWidth,
+              lineStyle,
+              priceLineVisible: false,
+              lastValueVisible: false,
+            });
+            ls.setData(data);
+            return ls;
+          };
+
+          const lines = [createLine(firstLineData), createLine(secondLineData)];
+          channelLinesRef.current.set(drawing.id, lines);
+        }
       }
     });
   }, [chart, series, stockCode, getDrawings, selectedId]);
@@ -916,6 +1065,17 @@ export function useDrawing({ chart, series, stockCode }: UseDrawingOptions) {
           });
         });
         triangleLinesRef.current.clear();
+
+        channelLinesRef.current.forEach((lineSeriesArr) => {
+          lineSeriesArr.forEach((lineSeries) => {
+            try {
+              chart.removeSeries(lineSeries);
+            } catch {
+              // Ignore
+            }
+          });
+        });
+        channelLinesRef.current.clear();
       }
     };
   }, [chart, series, stockCode]);
