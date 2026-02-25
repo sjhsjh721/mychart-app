@@ -20,6 +20,7 @@ import {
   type RayDrawing,
   type FibRetracementDrawing,
   type RectangleDrawing,
+  type TriangleDrawing,
   type TextDrawing,
   type Point,
 } from "@/store/drawing-store";
@@ -57,6 +58,8 @@ export function useDrawing({ chart, series, stockCode }: UseDrawingOptions) {
   const fibLinesRef = useRef<Map<string, IPriceLine[]>>(new Map());
   // Track rectangle line series (4 lines per rectangle)
   const rectangleLinesRef = useRef<Map<string, ISeriesApi<"Line">[]>>(new Map());
+  // Track triangle line series (3 lines per triangle)
+  const triangleLinesRef = useRef<Map<string, ISeriesApi<"Line">[]>>(new Map());
 
   // Find closest drawing to click point
   const findClosestDrawing = useCallback(
@@ -297,6 +300,31 @@ export function useDrawing({ chart, series, stockCode }: UseDrawingOptions) {
           clearTempPoints();
           setActiveTool(null);
         }
+      } else if (activeTool === "triangle") {
+        // Triangle needs three points
+        const time = param.time as number;
+        if (!time) return;
+        const point: Point = { time, price };
+
+        if (tempPoints.length < 2) {
+          addTempPoint(point);
+        } else {
+          const drawing: TriangleDrawing = {
+            id: createDrawingId(),
+            type: "triangle",
+            point1: tempPoints[0],
+            point2: tempPoints[1],
+            point3: point,
+            style: { ...defaultStyle },
+            visible: true,
+            locked: false,
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+          };
+          addDrawing(stockCode, drawing);
+          clearTempPoints();
+          setActiveTool(null);
+        }
       }
     },
     [
@@ -388,6 +416,20 @@ export function useDrawing({ chart, series, stockCode }: UseDrawingOptions) {
           }
         });
         rectangleLinesRef.current.delete(id);
+      }
+    });
+
+    // Remove triangle lines for deleted drawings
+    triangleLinesRef.current.forEach((lineSeriesArr, id) => {
+      if (!currentIds.has(id)) {
+        lineSeriesArr.forEach((lineSeries) => {
+          try {
+            chart.removeSeries(lineSeries);
+          } catch {
+            // Ignore
+          }
+        });
+        triangleLinesRef.current.delete(id);
       }
     });
 
@@ -679,6 +721,74 @@ export function useDrawing({ chart, series, stockCode }: UseDrawingOptions) {
           ];
           rectangleLinesRef.current.set(drawing.id, lines);
         }
+      } else if (drawing.type === "triangle" && drawing.visible) {
+        // Triangle: render as 3 line series connecting 3 points
+        const existing = triangleLinesRef.current.get(drawing.id);
+
+        const color = getHighlightColor(drawing.style.color, isSelected);
+        const lineWidth = getHighlightWidth(drawing.style.lineWidth, isSelected);
+        const lineStyle: LineStyle =
+          drawing.style.lineStyle === "dashed" ? 1 : drawing.style.lineStyle === "dotted" ? 2 : 0;
+
+        const { point1, point2, point3 } = drawing;
+
+        // Sort points by time for each line segment
+        const sortByTime = (a: Point, b: Point): [Point, Point] =>
+          a.time <= b.time ? [a, b] : [b, a];
+
+        const [line1Start, line1End] = sortByTime(point1, point2);
+        const [line2Start, line2End] = sortByTime(point2, point3);
+        const [line3Start, line3End] = sortByTime(point3, point1);
+
+        const line1Data: LineData[] = [
+          { time: line1Start.time as Time, value: line1Start.price },
+          { time: line1End.time as Time, value: line1End.price },
+        ];
+        const line2Data: LineData[] = [
+          { time: line2Start.time as Time, value: line2Start.price },
+          { time: line2End.time as Time, value: line2End.price },
+        ];
+        const line3Data: LineData[] = [
+          { time: line3Start.time as Time, value: line3Start.price },
+          { time: line3End.time as Time, value: line3End.price },
+        ];
+
+        if (existing && existing.length === 3) {
+          // Update existing lines
+          existing[0].applyOptions({ color, lineWidth, lineStyle });
+          existing[0].setData(line1Data);
+          existing[1].applyOptions({ color, lineWidth, lineStyle });
+          existing[1].setData(line2Data);
+          existing[2].applyOptions({ color, lineWidth, lineStyle });
+          existing[2].setData(line3Data);
+        } else {
+          // Remove old if exists
+          if (existing) {
+            existing.forEach((ls) => {
+              try {
+                chart.removeSeries(ls);
+              } catch {
+                // Ignore
+              }
+            });
+          }
+
+          // Create 3 new line series
+          const createLine = (data: LineData[]) => {
+            const ls = chart.addLineSeries({
+              color,
+              lineWidth,
+              lineStyle,
+              priceLineVisible: false,
+              lastValueVisible: false,
+            });
+            ls.setData(data);
+            return ls;
+          };
+
+          const lines = [createLine(line1Data), createLine(line2Data), createLine(line3Data)];
+          triangleLinesRef.current.set(drawing.id, lines);
+        }
       }
     });
   }, [chart, series, stockCode, getDrawings, selectedId]);
@@ -795,6 +905,17 @@ export function useDrawing({ chart, series, stockCode }: UseDrawingOptions) {
           });
         });
         rectangleLinesRef.current.clear();
+
+        triangleLinesRef.current.forEach((lineSeriesArr) => {
+          lineSeriesArr.forEach((lineSeries) => {
+            try {
+              chart.removeSeries(lineSeries);
+            } catch {
+              // Ignore
+            }
+          });
+        });
+        triangleLinesRef.current.clear();
       }
     };
   }, [chart, series, stockCode]);
