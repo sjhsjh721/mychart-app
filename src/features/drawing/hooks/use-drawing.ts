@@ -19,6 +19,7 @@ import {
   type VerticalLineDrawing,
   type RayDrawing,
   type FibRetracementDrawing,
+  type RectangleDrawing,
   type TextDrawing,
   type Point,
 } from "@/store/drawing-store";
@@ -54,6 +55,8 @@ export function useDrawing({ chart, series, stockCode }: UseDrawingOptions) {
   const rayLinesRef = useRef<Map<string, ISeriesApi<"Line">>>(new Map());
   // Track fibonacci price lines (multiple per drawing)
   const fibLinesRef = useRef<Map<string, IPriceLine[]>>(new Map());
+  // Track rectangle line series (4 lines per rectangle)
+  const rectangleLinesRef = useRef<Map<string, ISeriesApi<"Line">[]>>(new Map());
 
   // Find closest drawing to click point
   const findClosestDrawing = useCallback(
@@ -259,6 +262,41 @@ export function useDrawing({ chart, series, stockCode }: UseDrawingOptions) {
         };
         addDrawing(stockCode, drawing);
         setActiveTool(null);
+      } else if (activeTool === "rectangle") {
+        // Rectangle needs two points (corners)
+        const time = param.time as number;
+        if (!time) return;
+        const point: Point = { time, price };
+
+        if (tempPoints.length === 0) {
+          addTempPoint(point);
+        } else {
+          const firstPoint = tempPoints[0];
+          // Determine topLeft and bottomRight
+          const topLeft: Point = {
+            time: Math.min(firstPoint.time, point.time),
+            price: Math.max(firstPoint.price, point.price),
+          };
+          const bottomRight: Point = {
+            time: Math.max(firstPoint.time, point.time),
+            price: Math.min(firstPoint.price, point.price),
+          };
+
+          const drawing: RectangleDrawing = {
+            id: createDrawingId(),
+            type: "rectangle",
+            topLeft,
+            bottomRight,
+            style: { ...defaultStyle },
+            visible: true,
+            locked: false,
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+          };
+          addDrawing(stockCode, drawing);
+          clearTempPoints();
+          setActiveTool(null);
+        }
       }
     },
     [
@@ -336,6 +374,20 @@ export function useDrawing({ chart, series, stockCode }: UseDrawingOptions) {
           }
         });
         fibLinesRef.current.delete(id);
+      }
+    });
+
+    // Remove rectangle lines for deleted drawings
+    rectangleLinesRef.current.forEach((lineSeriesArr, id) => {
+      if (!currentIds.has(id)) {
+        lineSeriesArr.forEach((lineSeries) => {
+          try {
+            chart.removeSeries(lineSeries);
+          } catch {
+            // Ignore
+          }
+        });
+        rectangleLinesRef.current.delete(id);
       }
     });
 
@@ -554,6 +606,79 @@ export function useDrawing({ chart, series, stockCode }: UseDrawingOptions) {
           ];
           series.setMarkers(markers);
         }
+      } else if (drawing.type === "rectangle" && drawing.visible) {
+        // Rectangle: render as 4 line series (top, bottom, left, right)
+        const existing = rectangleLinesRef.current.get(drawing.id);
+
+        const color = getHighlightColor(drawing.style.color, isSelected);
+        const lineWidth = getHighlightWidth(drawing.style.lineWidth, isSelected);
+        const lineStyle: LineStyle =
+          drawing.style.lineStyle === "dashed" ? 1 : drawing.style.lineStyle === "dotted" ? 2 : 0;
+
+        const { topLeft, bottomRight } = drawing;
+
+        // 4 lines: top, bottom, left (approximated), right (approximated)
+        const topLineData: LineData[] = [
+          { time: topLeft.time as Time, value: topLeft.price },
+          { time: bottomRight.time as Time, value: topLeft.price },
+        ];
+        const bottomLineData: LineData[] = [
+          { time: topLeft.time as Time, value: bottomRight.price },
+          { time: bottomRight.time as Time, value: bottomRight.price },
+        ];
+        // Vertical lines approximated with very close time points
+        const leftLineData: LineData[] = [
+          { time: topLeft.time as Time, value: topLeft.price },
+          { time: (topLeft.time + 1) as Time, value: bottomRight.price },
+        ];
+        const rightLineData: LineData[] = [
+          { time: (bottomRight.time - 1) as Time, value: topLeft.price },
+          { time: bottomRight.time as Time, value: bottomRight.price },
+        ];
+
+        if (existing && existing.length === 4) {
+          // Update existing lines
+          existing[0].applyOptions({ color, lineWidth, lineStyle });
+          existing[0].setData(topLineData);
+          existing[1].applyOptions({ color, lineWidth, lineStyle });
+          existing[1].setData(bottomLineData);
+          existing[2].applyOptions({ color, lineWidth, lineStyle });
+          existing[2].setData(leftLineData);
+          existing[3].applyOptions({ color, lineWidth, lineStyle });
+          existing[3].setData(rightLineData);
+        } else {
+          // Remove old if exists
+          if (existing) {
+            existing.forEach((ls) => {
+              try {
+                chart.removeSeries(ls);
+              } catch {
+                // Ignore
+              }
+            });
+          }
+
+          // Create 4 new line series
+          const createLine = (data: LineData[]) => {
+            const ls = chart.addLineSeries({
+              color,
+              lineWidth,
+              lineStyle,
+              priceLineVisible: false,
+              lastValueVisible: false,
+            });
+            ls.setData(data);
+            return ls;
+          };
+
+          const lines = [
+            createLine(topLineData),
+            createLine(bottomLineData),
+            createLine(leftLineData),
+            createLine(rightLineData),
+          ];
+          rectangleLinesRef.current.set(drawing.id, lines);
+        }
       }
     });
   }, [chart, series, stockCode, getDrawings, selectedId]);
@@ -659,6 +784,17 @@ export function useDrawing({ chart, series, stockCode }: UseDrawingOptions) {
           }
         });
         rayLinesRef.current.clear();
+
+        rectangleLinesRef.current.forEach((lineSeriesArr) => {
+          lineSeriesArr.forEach((lineSeries) => {
+            try {
+              chart.removeSeries(lineSeries);
+            } catch {
+              // Ignore
+            }
+          });
+        });
+        rectangleLinesRef.current.clear();
       }
     };
   }, [chart, series, stockCode]);
