@@ -993,20 +993,30 @@ export function useDrawing({ chart, series, stockCode }: UseDrawingOptions) {
 
   // Cleanup on unmount or stock change
   useEffect(() => {
+    // Copy refs to local variables for cleanup (React hooks exhaustive-deps rule)
+    const priceLines = priceLinesRef.current;
+    const fibLines = fibLinesRef.current;
+    const trendLines = trendLinesRef.current;
+    const verticalLines = verticalLinesRef.current;
+    const rayLines = rayLinesRef.current;
+    const rectangleLines = rectangleLinesRef.current;
+    const triangleLines = triangleLinesRef.current;
+    const channelLines = channelLinesRef.current;
+
     return () => {
       if (series) {
-        priceLinesRef.current.forEach((priceLine) => {
+        priceLines.forEach((priceLine) => {
           try {
             series.removePriceLine(priceLine);
           } catch {
             // Ignore if already removed
           }
         });
-        priceLinesRef.current.clear();
+        priceLines.clear();
 
         // Cleanup fibonacci lines
-        fibLinesRef.current.forEach((priceLines) => {
-          priceLines.forEach((line) => {
+        fibLines.forEach((fibPriceLines) => {
+          fibPriceLines.forEach((line) => {
             try {
               series.removePriceLine(line);
             } catch {
@@ -1014,37 +1024,37 @@ export function useDrawing({ chart, series, stockCode }: UseDrawingOptions) {
             }
           });
         });
-        fibLinesRef.current.clear();
+        fibLines.clear();
       }
       if (chart) {
-        trendLinesRef.current.forEach((lineSeries) => {
+        trendLines.forEach((lineSeries) => {
           try {
             chart.removeSeries(lineSeries);
           } catch {
             // Ignore if already removed
           }
         });
-        trendLinesRef.current.clear();
+        trendLines.clear();
 
-        verticalLinesRef.current.forEach((lineSeries) => {
+        verticalLines.forEach((lineSeries) => {
           try {
             chart.removeSeries(lineSeries);
           } catch {
             // Ignore if already removed
           }
         });
-        verticalLinesRef.current.clear();
+        verticalLines.clear();
 
-        rayLinesRef.current.forEach((lineSeries) => {
+        rayLines.forEach((lineSeries) => {
           try {
             chart.removeSeries(lineSeries);
           } catch {
             // Ignore if already removed
           }
         });
-        rayLinesRef.current.clear();
+        rayLines.clear();
 
-        rectangleLinesRef.current.forEach((lineSeriesArr) => {
+        rectangleLines.forEach((lineSeriesArr) => {
           lineSeriesArr.forEach((lineSeries) => {
             try {
               chart.removeSeries(lineSeries);
@@ -1053,9 +1063,9 @@ export function useDrawing({ chart, series, stockCode }: UseDrawingOptions) {
             }
           });
         });
-        rectangleLinesRef.current.clear();
+        rectangleLines.clear();
 
-        triangleLinesRef.current.forEach((lineSeriesArr) => {
+        triangleLines.forEach((lineSeriesArr) => {
           lineSeriesArr.forEach((lineSeries) => {
             try {
               chart.removeSeries(lineSeries);
@@ -1064,9 +1074,9 @@ export function useDrawing({ chart, series, stockCode }: UseDrawingOptions) {
             }
           });
         });
-        triangleLinesRef.current.clear();
+        triangleLines.clear();
 
-        channelLinesRef.current.forEach((lineSeriesArr) => {
+        channelLines.forEach((lineSeriesArr) => {
           lineSeriesArr.forEach((lineSeries) => {
             try {
               chart.removeSeries(lineSeries);
@@ -1075,7 +1085,7 @@ export function useDrawing({ chart, series, stockCode }: UseDrawingOptions) {
             }
           });
         });
-        channelLinesRef.current.clear();
+        channelLines.clear();
       }
     };
   }, [chart, series, stockCode]);

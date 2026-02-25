@@ -486,7 +486,7 @@ export function CandlestickChart({
     // 종목 변경 시 전체 차트 스케일 리셋
     chart.timeScale().fitContent();
     chart.priceScale("right").applyOptions({ autoScale: true });
-  }, [candles, volume, ma5, ma10, ma20, ma60, ma120, ma200, bollingerBands, rsi, ichimoku]);
+  }, [candles, volumeData, ma5, ma10, ma20, ma60, ma120, ma200, bollingerBands, rsi, ichimoku]);
 
   // 지표 visible 토글
   useEffect(() => {

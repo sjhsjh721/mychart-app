@@ -48,19 +48,20 @@
   - 0%, 23.6%, 38.2%, 50%, 61.8%, 100% 레벨
   - 레벨별 색상
   - 가격 표시
-- [ ] **DRAW-009** 평행 채널 (ParallelChannel) → **M3.5로 이동**
+- [x] **DRAW-009** 평행 채널 (ParallelChannel) ✅
   - 상단선, 하단선, 중심선
-  - 너비 조절
-  - ⚠️ custom primitives (ISeriesPrimitive) 필요
+  - LineSeries 조합으로 구현 (custom primitives 대신)
+  - 커밋: `f1e924d`
 
 #### Day 8-9: 도형 도구
-- [ ] **DRAW-010** 사각형 (Rectangle) → **M3.5로 이동**
+- [x] **DRAW-010** 사각형 (Rectangle) ✅
   - 박스권 표시
-  - 배경색 투명도
-  - ⚠️ custom primitives 필요
-- [ ] **DRAW-011** 삼각형 (Triangle) → **M3.5로 이동**
+  - LineSeries 조합으로 구현
+  - 커밋: `14afbc6`
+- [x] **DRAW-011** 삼각형 (Triangle) ✅
   - 3점 지정
-  - ⚠️ custom primitives 필요
+  - LineSeries 조합으로 구현
+  - 커밋: `185da8f`
 - [x] **DRAW-012** 텍스트 (Text) ✅
   - 차트에 메모 추가
 
