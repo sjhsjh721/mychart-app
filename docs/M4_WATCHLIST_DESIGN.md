@@ -101,20 +101,230 @@ src/features/watchlist/
 
 ## MCHART-018: 알림 조건 설정
 
-*(다음 티켓에서 상세화)*
+### 개요
+종목별로 알림 조건을 설정하고 저장하는 UI.
 
-### 핵심 기능
-- 가격 조건: 이상/이하/도달
-- 지표 조건: RSI > 70, MACD 골든크로스 등
-- 조건 저장: Supabase alerts 테이블
+### UI 구조
+```
+┌─────────────────────────────────────┐
+│ 알림 설정 - 삼성전자 (005930)    [X]│
+├─────────────────────────────────────┤
+│ + 새 조건 추가                      │
+├─────────────────────────────────────┤
+│ ☑ 가격 >= 85,000원           [🗑️] │
+│ ☑ RSI(14) >= 70              [🗑️] │
+│ ☐ 가격 <= 80,000원 (비활성)  [🗑️] │
+├─────────────────────────────────────┤
+│           [저장] [취소]             │
+└─────────────────────────────────────┘
+```
+
+### 조건 타입
+
+```typescript
+type AlertConditionType = 
+  | 'price_above'      // 가격 이상
+  | 'price_below'      // 가격 이하
+  | 'price_reach'      // 가격 도달 (±0.5%)
+  | 'rsi_above'        // RSI 이상
+  | 'rsi_below'        // RSI 이하
+  | 'ma_cross_up'      // MA 골든크로스
+  | 'ma_cross_down'    // MA 데드크로스
+  | 'volume_spike';    // 거래량 급증 (평균 대비 %)
+
+interface AlertCondition {
+  id: string;
+  user_id: string;
+  symbol: string;
+  type: AlertConditionType;
+  value: number;           // 조건 값
+  params?: {               // 추가 파라미터
+    period?: number;       // RSI/MA 기간
+    ma_short?: number;     // 단기 MA
+    ma_long?: number;      // 장기 MA
+  };
+  enabled: boolean;
+  triggered_at?: string;   // 마지막 발동 시간
+  created_at: string;
+}
+```
+
+### 데이터 구조 (Supabase)
+
+```sql
+CREATE TABLE alerts (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES auth.users(id),
+  symbol VARCHAR(20) NOT NULL,
+  type VARCHAR(30) NOT NULL,
+  value DECIMAL NOT NULL,
+  params JSONB,
+  enabled BOOLEAN DEFAULT true,
+  triggered_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX idx_alerts_user ON alerts(user_id);
+CREATE INDEX idx_alerts_symbol ON alerts(symbol);
+CREATE INDEX idx_alerts_enabled ON alerts(enabled) WHERE enabled = true;
+```
+
+### 컴포넌트 구조
+```
+src/features/alerts/
+├── components/
+│   ├── alert-settings-dialog.tsx  # 알림 설정 모달
+│   ├── alert-condition-row.tsx    # 조건 행
+│   ├── condition-type-select.tsx  # 조건 타입 선택
+│   └── condition-value-input.tsx  # 값 입력
+├── hooks/
+│   └── use-alerts.ts              # 알림 CRUD
+├── store/
+│   └── alert-store.ts             # Zustand store
+└── types.ts
+```
+
+### 구현 순서
+1. DB 스키마 생성
+2. 알림 설정 모달 UI
+3. 조건 타입별 입력 폼
+4. Supabase CRUD
+5. 조건 활성화/비활성화 토글
+
+### 예상 시간: 3시간
 
 ---
 
 ## MCHART-019: 알림 워커
 
-*(다음 티켓에서 상세화)*
+### 개요
+활성화된 알림 조건을 주기적으로 평가하고, 조건 충족 시 텔레그램으로 알림 발송.
 
-### 핵심 기능
-- Supabase Edge Function
-- 1분마다 스케줄 실행
-- 조건 평가 → 텔레그램 발송
+### 아키텍처
+```
+┌─────────────┐    ┌──────────────┐    ┌─────────────┐
+│  Supabase   │───▶│ Edge Function│───▶│  Telegram   │
+│  pg_cron    │    │  (check-     │    │     Bot     │
+│  (1분마다)  │    │   alerts)    │    │             │
+└─────────────┘    └──────────────┘    └─────────────┘
+                          │
+                          ▼
+                   ┌──────────────┐
+                   │ Yahoo Finance│
+                   │     API      │
+                   └──────────────┘
+```
+
+### Edge Function 로직
+
+```typescript
+// supabase/functions/check-alerts/index.ts
+
+export default async function handler(req: Request) {
+  // 1. 활성화된 알림 조건 조회
+  const { data: alerts } = await supabase
+    .from('alerts')
+    .select('*')
+    .eq('enabled', true);
+
+  // 2. 종목별로 그룹화
+  const symbolGroups = groupBy(alerts, 'symbol');
+
+  // 3. 각 종목 현재가/지표 조회
+  for (const [symbol, conditions] of Object.entries(symbolGroups)) {
+    const quote = await fetchQuote(symbol);
+    const indicators = await calculateIndicators(symbol);
+
+    // 4. 조건 평가
+    for (const condition of conditions) {
+      if (evaluateCondition(condition, quote, indicators)) {
+        // 5. 텔레그램 발송
+        await sendTelegramAlert(condition, quote);
+        
+        // 6. triggered_at 업데이트 (중복 방지)
+        await supabase
+          .from('alerts')
+          .update({ triggered_at: new Date().toISOString() })
+          .eq('id', condition.id);
+      }
+    }
+  }
+}
+```
+
+### 조건 평가 함수
+
+```typescript
+function evaluateCondition(
+  condition: AlertCondition,
+  quote: Quote,
+  indicators: Indicators
+): boolean {
+  // 최근 1시간 내 발동됐으면 스킵 (중복 방지)
+  if (condition.triggered_at) {
+    const hourAgo = Date.now() - 60 * 60 * 1000;
+    if (new Date(condition.triggered_at).getTime() > hourAgo) {
+      return false;
+    }
+  }
+
+  switch (condition.type) {
+    case 'price_above':
+      return quote.price >= condition.value;
+    case 'price_below':
+      return quote.price <= condition.value;
+    case 'rsi_above':
+      return indicators.rsi >= condition.value;
+    case 'rsi_below':
+      return indicators.rsi <= condition.value;
+    // ...
+  }
+}
+```
+
+### 텔레그램 메시지 포맷
+
+```
+🔔 삼성전자 알림
+
+조건: 가격 >= 85,000원
+현재가: 85,200원 (+1.5%)
+
+📊 https://mychart-app.vercel.app?symbol=005930.KS
+```
+
+### 스케줄 설정 (pg_cron)
+
+```sql
+-- 1분마다 실행
+SELECT cron.schedule(
+  'check-alerts',
+  '* * * * *',
+  $$
+  SELECT net.http_post(
+    url := 'https://<project>.supabase.co/functions/v1/check-alerts',
+    headers := '{"Authorization": "Bearer <service_role_key>"}'::jsonb
+  );
+  $$
+);
+```
+
+### 구현 순서
+1. Edge Function 생성 (`check-alerts`)
+2. 조건 평가 로직
+3. 텔레그램 봇 연동
+4. pg_cron 스케줄 설정
+5. 테스트 및 배포
+
+### 예상 시간: 4시간
+
+---
+
+## 총 예상 시간
+
+| 티켓 | 내용 | 시간 |
+|------|------|------|
+| MCHART-017 | 관심종목 패널 | 3h |
+| MCHART-018 | 알림 조건 설정 | 3h |
+| MCHART-019 | 알림 워커 | 4h |
+| **합계** | | **10h** |
