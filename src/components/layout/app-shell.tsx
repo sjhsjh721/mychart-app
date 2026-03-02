@@ -118,7 +118,11 @@ export function AppShell({ children }: PropsWithChildren) {
               </button>
             </div>
             {/* 관심종목 패널 */}
-            <WatchlistPanel onSelectStock={handleSelectStock} selectedCode={selectedStock.code} />
+            <WatchlistPanel
+              onSelectStock={handleSelectStock}
+              selectedCode={selectedStock.code}
+              selectedName={selectedStock.name}
+            />
           </div>
         </aside>
 

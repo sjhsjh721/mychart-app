@@ -1,18 +1,28 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, ChevronDown, ChevronRight, Trash2, Star } from "lucide-react";
+import { Plus, ChevronDown, ChevronRight, Trash2, Star, PlusCircle } from "lucide-react";
 import { useWatchlistStore } from "../store/watchlist-store";
 import { cn } from "@/lib/utils";
 
 interface WatchlistPanelProps {
   onSelectStock?: (stock: { code: string; name: string }) => void;
   selectedCode?: string;
+  selectedName?: string;
 }
 
-export function WatchlistPanel({ onSelectStock, selectedCode }: WatchlistPanelProps) {
-  const { groups, items, prices, expandedGroups, toggleGroup, addGroup, removeGroup, removeItem } =
-    useWatchlistStore();
+export function WatchlistPanel({ onSelectStock, selectedCode, selectedName }: WatchlistPanelProps) {
+  const {
+    groups,
+    items,
+    prices,
+    expandedGroups,
+    toggleGroup,
+    addGroup,
+    removeGroup,
+    addItem,
+    removeItem,
+  } = useWatchlistStore();
   const [isAddingGroup, setIsAddingGroup] = useState(false);
   const [newGroupName, setNewGroupName] = useState("");
 
@@ -22,6 +32,18 @@ export function WatchlistPanel({ onSelectStock, selectedCode }: WatchlistPanelPr
       setNewGroupName("");
       setIsAddingGroup(false);
     }
+  };
+
+  const handleAddCurrentStock = (groupId: string) => {
+    if (selectedCode && selectedName) {
+      addItem(groupId, selectedCode, selectedName);
+      setAddingToGroup(null);
+    }
+  };
+
+  const isStockInGroup = (groupId: string) => {
+    const groupItems = items[groupId] || [];
+    return groupItems.some((item) => item.symbol === selectedCode);
   };
 
   const formatPrice = (price: number) => {
@@ -79,6 +101,7 @@ export function WatchlistPanel({ onSelectStock, selectedCode }: WatchlistPanelPr
           groups.map((group) => {
             const groupItems = items[group.id] || [];
             const isExpanded = expandedGroups.has(group.id);
+            const alreadyInGroup = isStockInGroup(group.id);
 
             return (
               <div key={group.id} className="border-b border-border last:border-0">
@@ -96,23 +119,40 @@ export function WatchlistPanel({ onSelectStock, selectedCode }: WatchlistPanelPr
                     <span className="text-sm font-medium">{group.name}</span>
                     <span className="text-xs text-muted-foreground">({groupItems.length})</span>
                   </div>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      removeGroup(group.id);
-                    }}
-                    className="p-1 opacity-0 group-hover:opacity-100 hover:bg-destructive/20 rounded"
-                  >
-                    <Trash2 className="w-3 h-3 text-destructive" />
-                  </button>
+                  <div className="flex items-center gap-1">
+                    {selectedCode && !alreadyInGroup && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleAddCurrentStock(group.id);
+                        }}
+                        className="p-1 opacity-0 group-hover:opacity-100 hover:bg-primary/20 rounded"
+                        title={`${selectedName} 추가`}
+                      >
+                        <PlusCircle className="w-3 h-3 text-primary" />
+                      </button>
+                    )}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        removeGroup(group.id);
+                      }}
+                      className="p-1 opacity-0 group-hover:opacity-100 hover:bg-destructive/20 rounded"
+                    >
+                      <Trash2 className="w-3 h-3 text-destructive" />
+                    </button>
+                  </div>
                 </div>
 
                 {/* Items */}
                 {isExpanded && (
                   <div className="bg-muted/30">
                     {groupItems.length === 0 ? (
-                      <div className="px-6 py-3 text-xs text-muted-foreground">
-                        종목을 추가하세요
+                      <div
+                        className="px-6 py-3 text-xs text-muted-foreground hover:bg-accent cursor-pointer"
+                        onClick={() => selectedCode && handleAddCurrentStock(group.id)}
+                      >
+                        {selectedCode ? `+ ${selectedName} 추가` : "종목을 추가하세요"}
                       </div>
                     ) : (
                       groupItems.map((item) => {
