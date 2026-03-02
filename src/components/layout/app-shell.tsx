@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { useKisQuote } from "@/features/kis/use-kis-quote";
 import { StockSearchModal } from "@/features/search/components/stock-search-modal";
+import { WatchlistPanel } from "@/features/watchlist";
 import { useChartStore } from "@/store/chart-store";
 import { useLayoutStore } from "@/store/layout-store";
 import { useSearchModalStore } from "@/store/search-modal-store";
@@ -107,39 +108,17 @@ export function AppShell({ children }: PropsWithChildren) {
           }
         >
           <div className="flex h-full flex-col">
-            <div className="flex items-center justify-between p-3">
-              <span className="text-xs font-medium text-muted-foreground">WATCHLIST</span>
+            {/* 모바일 닫기 버튼 */}
+            <div className="flex items-center justify-end p-2 md:hidden">
               <button
-                className="text-muted-foreground md:hidden"
+                className="text-muted-foreground p-1"
                 onClick={() => setSidebarCollapsed(true)}
               >
                 ✕
               </button>
             </div>
-            <div className="flex-1 overflow-auto px-2 pb-4">
-              <div className="space-y-1">
-                {[
-                  { code: "AAPL", name: "AAPL" },
-                  { code: "TSLA", name: "TSLA" },
-                  { code: "005930", name: "삼성전자" },
-                ].map((s) => {
-                  const active = s.code === selectedStock.code;
-                  return (
-                    <button
-                      key={s.code}
-                      className={
-                        "w-full rounded-md px-3 py-2 text-left text-sm hover:bg-muted " +
-                        (active ? "bg-muted" : "")
-                      }
-                      onClick={() => handleSelectStock({ code: s.code, name: s.name })}
-                    >
-                      {s.name}
-                      {s.code === "005930" ? " (005930)" : ""}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
+            {/* 관심종목 패널 */}
+            <WatchlistPanel onSelectStock={handleSelectStock} selectedCode={selectedStock.code} />
           </div>
         </aside>
 
