@@ -37,7 +37,6 @@ export function WatchlistPanel({ onSelectStock, selectedCode, selectedName }: Wa
   const handleAddCurrentStock = (groupId: string) => {
     if (selectedCode && selectedName) {
       addItem(groupId, selectedCode, selectedName);
-      setAddingToGroup(null);
     }
   };
 
