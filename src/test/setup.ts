@@ -1,4 +1,4 @@
-import '@testing-library/jest-dom'
+import "@testing-library/jest-dom";
 
 // Mock localStorage for Zustand persist middleware
 const localStorageMock = {
@@ -8,8 +8,8 @@ const localStorageMock = {
   clear: vi.fn(),
   length: 0,
   key: vi.fn(),
-}
+};
 
-Object.defineProperty(globalThis, 'localStorage', {
+Object.defineProperty(globalThis, "localStorage", {
   value: localStorageMock,
-})
+});

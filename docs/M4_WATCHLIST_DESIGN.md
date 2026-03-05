@@ -3,9 +3,11 @@
 ## MCHART-017: 관심종목 패널
 
 ### 개요
+
 사이드바에 관심종목 그룹을 표시하고, 실시간 현재가/등락률을 보여주는 패널.
 
 ### UI 구조
+
 ```
 ┌─────────────────────────┐
 │ 관심종목            [+] │  ← 그룹 추가 버튼
@@ -22,6 +24,7 @@
 ```
 
 ### 기능
+
 1. **그룹 관리**
    - 그룹 생성/수정/삭제
    - 그룹명 편집 (더블클릭)
@@ -54,8 +57,8 @@ interface WatchlistGroup {
 interface WatchlistItem {
   id: string;
   group_id: string;
-  symbol: string;       // "005930.KS" or "AAPL"
-  name: string;         // "삼성전자"
+  symbol: string; // "005930.KS" or "AAPL"
+  name: string; // "삼성전자"
   order: number;
   added_at: string;
 }
@@ -63,12 +66,13 @@ interface WatchlistItem {
 // Frontend state
 interface WatchlistState {
   groups: WatchlistGroup[];
-  items: Record<string, WatchlistItem[]>;  // group_id -> items
-  prices: Record<string, PriceData>;       // symbol -> price
+  items: Record<string, WatchlistItem[]>; // group_id -> items
+  prices: Record<string, PriceData>; // symbol -> price
 }
 ```
 
 ### 컴포넌트 구조
+
 ```
 src/features/watchlist/
 ├── components/
@@ -87,6 +91,7 @@ src/features/watchlist/
 ```
 
 ### 구현 순서
+
 1. DB 스키마 생성 (watchlist_groups, watchlist_items)
 2. Zustand store 설정
 3. 기본 UI (그룹/종목 표시)
@@ -102,9 +107,11 @@ src/features/watchlist/
 ## MCHART-018: 알림 조건 설정
 
 ### 개요
+
 종목별로 알림 조건을 설정하고 저장하는 UI.
 
 ### UI 구조
+
 ```
 ┌─────────────────────────────────────┐
 │ 알림 설정 - 삼성전자 (005930)    [X]│
@@ -122,29 +129,30 @@ src/features/watchlist/
 ### 조건 타입
 
 ```typescript
-type AlertConditionType = 
-  | 'price_above'      // 가격 이상
-  | 'price_below'      // 가격 이하
-  | 'price_reach'      // 가격 도달 (±0.5%)
-  | 'rsi_above'        // RSI 이상
-  | 'rsi_below'        // RSI 이하
-  | 'ma_cross_up'      // MA 골든크로스
-  | 'ma_cross_down'    // MA 데드크로스
-  | 'volume_spike';    // 거래량 급증 (평균 대비 %)
+type AlertConditionType =
+  | "price_above" // 가격 이상
+  | "price_below" // 가격 이하
+  | "price_reach" // 가격 도달 (±0.5%)
+  | "rsi_above" // RSI 이상
+  | "rsi_below" // RSI 이하
+  | "ma_cross_up" // MA 골든크로스
+  | "ma_cross_down" // MA 데드크로스
+  | "volume_spike"; // 거래량 급증 (평균 대비 %)
 
 interface AlertCondition {
   id: string;
   user_id: string;
   symbol: string;
   type: AlertConditionType;
-  value: number;           // 조건 값
-  params?: {               // 추가 파라미터
-    period?: number;       // RSI/MA 기간
-    ma_short?: number;     // 단기 MA
-    ma_long?: number;      // 장기 MA
+  value: number; // 조건 값
+  params?: {
+    // 추가 파라미터
+    period?: number; // RSI/MA 기간
+    ma_short?: number; // 단기 MA
+    ma_long?: number; // 장기 MA
   };
   enabled: boolean;
-  triggered_at?: string;   // 마지막 발동 시간
+  triggered_at?: string; // 마지막 발동 시간
   created_at: string;
 }
 ```
@@ -170,6 +178,7 @@ CREATE INDEX idx_alerts_enabled ON alerts(enabled) WHERE enabled = true;
 ```
 
 ### 컴포넌트 구조
+
 ```
 src/features/alerts/
 ├── components/
@@ -185,6 +194,7 @@ src/features/alerts/
 ```
 
 ### 구현 순서
+
 1. DB 스키마 생성
 2. 알림 설정 모달 UI
 3. 조건 타입별 입력 폼
@@ -198,9 +208,11 @@ src/features/alerts/
 ## MCHART-019: 알림 워커
 
 ### 개요
+
 활성화된 알림 조건을 주기적으로 평가하고, 조건 충족 시 텔레그램으로 알림 발송.
 
 ### 아키텍처
+
 ```
 ┌─────────────┐    ┌──────────────┐    ┌─────────────┐
 │  Supabase   │───▶│ Edge Function│───▶│  Telegram   │
@@ -222,13 +234,10 @@ src/features/alerts/
 
 export default async function handler(req: Request) {
   // 1. 활성화된 알림 조건 조회
-  const { data: alerts } = await supabase
-    .from('alerts')
-    .select('*')
-    .eq('enabled', true);
+  const { data: alerts } = await supabase.from("alerts").select("*").eq("enabled", true);
 
   // 2. 종목별로 그룹화
-  const symbolGroups = groupBy(alerts, 'symbol');
+  const symbolGroups = groupBy(alerts, "symbol");
 
   // 3. 각 종목 현재가/지표 조회
   for (const [symbol, conditions] of Object.entries(symbolGroups)) {
@@ -240,12 +249,12 @@ export default async function handler(req: Request) {
       if (evaluateCondition(condition, quote, indicators)) {
         // 5. 텔레그램 발송
         await sendTelegramAlert(condition, quote);
-        
+
         // 6. triggered_at 업데이트 (중복 방지)
         await supabase
-          .from('alerts')
+          .from("alerts")
           .update({ triggered_at: new Date().toISOString() })
-          .eq('id', condition.id);
+          .eq("id", condition.id);
       }
     }
   }
@@ -258,7 +267,7 @@ export default async function handler(req: Request) {
 function evaluateCondition(
   condition: AlertCondition,
   quote: Quote,
-  indicators: Indicators
+  indicators: Indicators,
 ): boolean {
   // 최근 1시간 내 발동됐으면 스킵 (중복 방지)
   if (condition.triggered_at) {
@@ -269,13 +278,13 @@ function evaluateCondition(
   }
 
   switch (condition.type) {
-    case 'price_above':
+    case "price_above":
       return quote.price >= condition.value;
-    case 'price_below':
+    case "price_below":
       return quote.price <= condition.value;
-    case 'rsi_above':
+    case "rsi_above":
       return indicators.rsi >= condition.value;
-    case 'rsi_below':
+    case "rsi_below":
       return indicators.rsi <= condition.value;
     // ...
   }
@@ -310,6 +319,7 @@ SELECT cron.schedule(
 ```
 
 ### 구현 순서
+
 1. Edge Function 생성 (`check-alerts`)
 2. 조건 평가 로직
 3. 텔레그램 봇 연동
@@ -322,9 +332,9 @@ SELECT cron.schedule(
 
 ## 총 예상 시간
 
-| 티켓 | 내용 | 시간 |
-|------|------|------|
-| MCHART-017 | 관심종목 패널 | 3h |
-| MCHART-018 | 알림 조건 설정 | 3h |
-| MCHART-019 | 알림 워커 | 4h |
-| **합계** | | **10h** |
+| 티켓       | 내용           | 시간    |
+| ---------- | -------------- | ------- |
+| MCHART-017 | 관심종목 패널  | 3h      |
+| MCHART-018 | 알림 조건 설정 | 3h      |
+| MCHART-019 | 알림 워커      | 4h      |
+| **합계**   |                | **10h** |

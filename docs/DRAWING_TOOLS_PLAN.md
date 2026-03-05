@@ -11,6 +11,7 @@
 ### Week 1: 인프라 + 기본 도구
 
 #### Day 1-2: 인프라 구축
+
 - [x] **DRAW-001** 작도 상태 관리 (Zustand store) ✅
   - 현재 선택된 도구
   - 그려진 도형 목록
@@ -23,6 +24,7 @@
   - 종목별 저장
 
 #### Day 3-4: 수평선 + 추세선
+
 - [x] **DRAW-004** 수평선 (HorizontalLine) ✅
   - 차트 클릭으로 추가
   - 드래그로 위치 조정
@@ -33,6 +35,7 @@
   - 연장선 옵션
 
 #### Day 5: 수직선 + 레이
+
 - [x] **DRAW-006** 수직선 (VerticalLine) ✅
   - 특정 시점 표시
   - 날짜 레이블
@@ -44,6 +47,7 @@
 ### Week 2: 고급 도구 + UX
 
 #### Day 6-7: 피보나치 + 채널
+
 - [x] **DRAW-008** 피보나치 되돌림 (FibRetracement) ✅
   - 0%, 23.6%, 38.2%, 50%, 61.8%, 100% 레벨
   - 레벨별 색상
@@ -54,6 +58,7 @@
   - 커밋: `f1e924d`
 
 #### Day 8-9: 도형 도구
+
 - [x] **DRAW-010** 사각형 (Rectangle) ✅
   - 박스권 표시
   - LineSeries 조합으로 구현
@@ -66,6 +71,7 @@
   - 차트에 메모 추가
 
 #### Day 10: UX 완성
+
 - [x] **DRAW-013** 선택/편집 모드 ✅
   - 클릭으로 도형 선택
   - 핸들로 크기/위치 조절
@@ -132,7 +138,7 @@ interface DrawingState {
   activeTool: DrawingTool | null;
   drawings: Drawing[];
   selectedId: string | null;
-  
+
   setActiveTool: (tool: DrawingTool | null) => void;
   addDrawing: (drawing: Drawing) => void;
   updateDrawing: (id: string, updates: Partial<Drawing>) => void;
@@ -145,16 +151,16 @@ interface DrawingState {
 
 ```typescript
 // 종목별로 작도 데이터 저장
-const STORAGE_KEY = 'mychart-drawings';
+const STORAGE_KEY = "mychart-drawings";
 
 function saveDrawings(code: string, drawings: Drawing[]) {
-  const all = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+  const all = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
   all[code] = drawings;
   localStorage.setItem(STORAGE_KEY, JSON.stringify(all));
 }
 
 function loadDrawings(code: string): Drawing[] {
-  const all = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+  const all = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
   return all[code] || [];
 }
 ```
