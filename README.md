@@ -59,6 +59,30 @@ pnpm dev
 
 [http://localhost:3000](http://localhost:3000)에서 확인
 
+## 테스트
+
+```bash
+pnpm test        # Watch 모드
+pnpm test:run    # 단일 실행
+```
+
+### 테스트 커버리지
+
+| 카테고리 | 테스트 수 | 범위 |
+|----------|-----------|------|
+| Stores | 55 | indicator, chart, drawing, watchlist, layout, search-modal |
+| Indicators | 14 | SMA, RSI, Bollinger Bands, Ichimoku |
+| Utils | 4 | timeframe validation |
+| **Total** | **73** | |
+
+### CI/CD
+
+GitHub Actions로 PR/push마다 자동 검증:
+- ✅ 테스트 (Vitest)
+- ✅ 타입체크 (tsc --noEmit)
+- ✅ 린트 (ESLint)
+- ✅ 빌드 (Next.js)
+
 ## 프로젝트 구조
 
 ```
@@ -76,4 +100,4 @@ src/
 
 ---
 
-_Last updated: 2026-02-21_
+_Last updated: 2026-03-05_
