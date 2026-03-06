@@ -71,9 +71,10 @@ pnpm test:run    # 단일 실행
 | 카테고리 | 테스트 수 | 범위 |
 |----------|-----------|------|
 | Stores | 55 | indicator, chart, drawing, watchlist, layout, search-modal |
+| Components | 10 | TimeframeSelector, PeriodSelector |
 | Indicators | 14 | SMA, RSI, Bollinger Bands, Ichimoku |
 | Utils | 4 | timeframe validation |
-| **Total** | **73** | |
+| **Total** | **83** | |
 
 ### CI/CD
 
@@ -100,4 +101,4 @@ src/
 
 ---
 
-_Last updated: 2026-03-05_
+_Last updated: 2026-03-06_
