@@ -50,9 +50,6 @@ describe("TimeframeSelector", () => {
     render(<TimeframeSelector value="1D" onChange={onChange} />);
 
     // Radix ToggleGroup uses role="group" not "radiogroup"
-    expect(screen.getByRole("group")).toHaveAttribute(
-      "aria-label",
-      "Select timeframe"
-    );
+    expect(screen.getByRole("group")).toHaveAttribute("aria-label", "Select timeframe");
   });
 });

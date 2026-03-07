@@ -46,9 +46,6 @@ describe("PeriodSelector", () => {
     const onChange = vi.fn();
     render(<PeriodSelector value="1Y" onChange={onChange} />);
 
-    expect(screen.getByRole("group")).toHaveAttribute(
-      "aria-label",
-      "Select period"
-    );
+    expect(screen.getByRole("group")).toHaveAttribute("aria-label", "Select period");
   });
 });
