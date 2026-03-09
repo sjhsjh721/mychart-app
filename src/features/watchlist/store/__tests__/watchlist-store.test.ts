@@ -116,6 +116,40 @@ describe("watchlist-store", () => {
       useWatchlistStore.getState().setItems("g1", items);
       expect(useWatchlistStore.getState().items["g1"]).toEqual(items);
     });
+
+    it("should handle moveItem when item does not exist", () => {
+      const store = useWatchlistStore.getState();
+      store.addGroup("그룹 A");
+      store.addGroup("그룹 B");
+
+      const groups = useWatchlistStore.getState().groups;
+      const groupAId = groups[0].id;
+      const groupBId = groups[1].id;
+
+      // Try to move non-existent item - should not throw
+      useWatchlistStore.getState().moveItem("non-existent-id", groupAId, groupBId);
+
+      // State should remain unchanged
+      expect(useWatchlistStore.getState().items[groupAId] || []).toHaveLength(0);
+      expect(useWatchlistStore.getState().items[groupBId] || []).toHaveLength(0);
+    });
+
+    it("should handle removeItem from non-existent group", () => {
+      // Remove from group that doesn't exist - should not throw
+      useWatchlistStore.getState().removeItem("non-existent-group", "item-id");
+
+      // Should handle gracefully (creates empty array as fallback)
+      expect(useWatchlistStore.getState().items["non-existent-group"]).toEqual([]);
+    });
+
+    it("should add item to group with no existing items", () => {
+      // Add item without first adding a group (items[groupId] is undefined)
+      useWatchlistStore.getState().addItem("new-group", "005930", "삼성전자");
+
+      const items = useWatchlistStore.getState().items["new-group"];
+      expect(items).toHaveLength(1);
+      expect(items[0].symbol).toBe("005930");
+    });
   });
 
   describe("prices", () => {
