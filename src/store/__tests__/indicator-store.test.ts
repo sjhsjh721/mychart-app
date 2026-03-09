@@ -79,4 +79,19 @@ describe("indicator-store", () => {
     store.toggleIndicator("ichimoku");
     expect(useIndicatorStore.getState().ichimoku.enabled).toBe(true);
   });
+
+  it("should update Ichimoku settings", () => {
+    const store = useIndicatorStore.getState();
+    store.setIchimoku({ tenkanPeriod: 7, kijunPeriod: 22 });
+    expect(useIndicatorStore.getState().ichimoku.tenkanPeriod).toBe(7);
+    expect(useIndicatorStore.getState().ichimoku.kijunPeriod).toBe(22);
+    // Other settings should remain unchanged
+    expect(useIndicatorStore.getState().ichimoku.senkouBPeriod).toBe(52);
+  });
+
+  it("should update Volume settings", () => {
+    const store = useIndicatorStore.getState();
+    store.setVolume({ enabled: false });
+    expect(useIndicatorStore.getState().volume.enabled).toBe(false);
+  });
 });
