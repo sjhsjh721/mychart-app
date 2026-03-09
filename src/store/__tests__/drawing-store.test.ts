@@ -145,6 +145,24 @@ describe("drawing-store", () => {
       expect(useDrawingStore.getState().getDrawings("005930")).toHaveLength(1);
       expect(useDrawingStore.getState().getDrawings("000660")).toHaveLength(1);
     });
+
+    it("should handle updateDrawing on non-existent stockCode", () => {
+      // Update drawing for stock that has no drawings - should not throw
+      useDrawingStore.getState().updateDrawing("non-existent", "drawing-id", {
+        style: { color: "#FF0000", lineWidth: 1, lineStyle: "solid" },
+      });
+
+      // Should create empty array as fallback
+      expect(useDrawingStore.getState().drawings["non-existent"]).toEqual([]);
+    });
+
+    it("should handle deleteDrawing on non-existent stockCode", () => {
+      // Delete drawing for stock that has no drawings - should not throw
+      useDrawingStore.getState().deleteDrawing("non-existent", "drawing-id");
+
+      // Should create empty array as fallback
+      expect(useDrawingStore.getState().drawings["non-existent"]).toEqual([]);
+    });
   });
 
   describe("drawing state", () => {
