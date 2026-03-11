@@ -8,6 +8,7 @@ const TIMEFRAMES: { value: Timeframe; label: string }[] = [
   { value: "5m", label: "5m" },
   { value: "15m", label: "15m" },
   { value: "1h", label: "1h" },
+  { value: "4h", label: "4h" },
   { value: "1D", label: "1D" },
   { value: "1W", label: "1W" },
   { value: "1M", label: "1M" },
