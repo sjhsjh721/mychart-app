@@ -216,7 +216,18 @@ async function getIntradayCandles(
 }
 
 function aggregateByTimeframe(candles: KisCandle[], tf: Timeframe): KisCandle[] {
-  const minutes = tf === "1m" ? 1 : tf === "5m" ? 5 : tf === "15m" ? 15 : tf === "1h" ? 60 : tf === "4h" ? 240 : 1;
+  const minutes =
+    tf === "1m"
+      ? 1
+      : tf === "5m"
+        ? 5
+        : tf === "15m"
+          ? 15
+          : tf === "1h"
+            ? 60
+            : tf === "4h"
+              ? 240
+              : 1;
   if (minutes === 1) return candles;
 
   const bucketSec = minutes * 60;
