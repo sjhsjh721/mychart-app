@@ -7,6 +7,7 @@ describe("isTimeframe", () => {
     expect(isTimeframe("5m")).toBe(true);
     expect(isTimeframe("15m")).toBe(true);
     expect(isTimeframe("1h")).toBe(true);
+    expect(isTimeframe("4h")).toBe(true);
     expect(isTimeframe("1D")).toBe(true);
     expect(isTimeframe("1W")).toBe(true);
     expect(isTimeframe("1M")).toBe(true);
@@ -26,12 +27,13 @@ describe("TIMEFRAMES", () => {
     expect(TIMEFRAMES).toContain("5m");
     expect(TIMEFRAMES).toContain("15m");
     expect(TIMEFRAMES).toContain("1h");
+    expect(TIMEFRAMES).toContain("4h");
     expect(TIMEFRAMES).toContain("1D");
     expect(TIMEFRAMES).toContain("1W");
     expect(TIMEFRAMES).toContain("1M");
   });
 
-  it("should have 7 timeframes", () => {
-    expect(TIMEFRAMES).toHaveLength(7);
+  it("should have 8 timeframes", () => {
+    expect(TIMEFRAMES).toHaveLength(8);
   });
 });

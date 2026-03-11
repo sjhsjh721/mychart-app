@@ -30,6 +30,7 @@ function timeframeToYahooInterval(
     case "15m":
       return "15m";
     case "1h":
+    case "4h":
       return "1h";
     case "1D":
       return "1d";
@@ -54,6 +55,8 @@ function timeframeSeconds(tf: Timeframe): number {
       return 15 * 60;
     case "1h":
       return 60 * 60;
+    case "4h":
+      return 4 * 60 * 60;
     case "1D":
       return 24 * 60 * 60;
     case "1W":
@@ -75,6 +78,8 @@ function minLookbackDays(tf: Timeframe): number {
       return 30;
     case "1h":
       return 90;
+    case "4h":
+      return 365;
     default:
       return 0;
   }
@@ -91,6 +96,7 @@ function maxLookbackDays(tf: Timeframe): number | null {
     case "15m":
       return 365;
     case "1h":
+    case "4h":
       return 730;
     default:
       return null;
@@ -200,5 +206,29 @@ export async function getYahooCandles(params: {
     .filter(isFiniteCandle)
     .sort((a, b) => a.time - b.time);
 
+  // Aggregate 1h candles into 4h if needed
+  if (params.timeframe === "4h") {
+    return aggregateCandles(candles, 4 * 3600).slice(-count);
+  }
+
   return candles.slice(-count);
+}
+
+function aggregateCandles(candles: KisCandle[], bucketSec: number): KisCandle[] {
+  const map = new Map<number, KisCandle>();
+
+  for (const c of candles) {
+    const bucket = Math.floor(c.time / bucketSec) * bucketSec;
+    const prev = map.get(bucket);
+    if (!prev) {
+      map.set(bucket, { ...c, time: bucket });
+      continue;
+    }
+    prev.high = Math.max(prev.high, c.high);
+    prev.low = Math.min(prev.low, c.low);
+    prev.close = c.close;
+    prev.volume = (prev.volume ?? 0) + (c.volume ?? 0);
+  }
+
+  return Array.from(map.values()).sort((a, b) => a.time - b.time);
 }
