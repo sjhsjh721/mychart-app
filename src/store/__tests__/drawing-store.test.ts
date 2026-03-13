@@ -113,6 +113,26 @@ describe("drawing-store", () => {
       expect(updated.style.color).toBe("#FF0000");
     });
 
+    it("should only update target drawing, leaving others unchanged", () => {
+      const drawing1 = createHorizontalLine(70000);
+      const drawing2 = createHorizontalLine(75000);
+      const drawing3 = createHorizontalLine(80000);
+
+      useDrawingStore.getState().addDrawing(stockCode, drawing1);
+      useDrawingStore.getState().addDrawing(stockCode, drawing2);
+      useDrawingStore.getState().addDrawing(stockCode, drawing3);
+
+      // Update only drawing2
+      useDrawingStore.getState().updateDrawing(stockCode, drawing2.id, {
+        style: { ...drawing2.style, color: "#FF0000" },
+      });
+
+      const drawings = useDrawingStore.getState().getDrawings(stockCode);
+      expect(drawings[0].style.color).toBe("#2962FF"); // unchanged
+      expect(drawings[1].style.color).toBe("#FF0000"); // updated
+      expect(drawings[2].style.color).toBe("#2962FF"); // unchanged
+    });
+
     it("should delete drawing", () => {
       const drawing = createHorizontalLine(75000);
       useDrawingStore.getState().addDrawing(stockCode, drawing);

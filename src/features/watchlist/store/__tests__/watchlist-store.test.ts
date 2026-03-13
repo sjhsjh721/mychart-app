@@ -58,6 +58,32 @@ describe("watchlist-store", () => {
       expect(useWatchlistStore.getState().groups[0].name).toBe("새 이름");
     });
 
+    it("should only rename the target group, leaving others unchanged", () => {
+      const store = useWatchlistStore.getState();
+      store.addGroup("그룹 A");
+      store.addGroup("그룹 B");
+      store.addGroup("그룹 C");
+
+      const groups = useWatchlistStore.getState().groups;
+      const groupBId = groups[1].id;
+
+      useWatchlistStore.getState().renameGroup(groupBId, "변경된 그룹 B");
+
+      const updatedGroups = useWatchlistStore.getState().groups;
+      expect(updatedGroups[0].name).toBe("그룹 A"); // unchanged
+      expect(updatedGroups[1].name).toBe("변경된 그룹 B"); // renamed
+      expect(updatedGroups[2].name).toBe("그룹 C"); // unchanged
+    });
+
+    it("should handle renameGroup with non-existent id", () => {
+      useWatchlistStore.getState().addGroup("기존 그룹");
+
+      // Rename non-existent group - should not throw, groups unchanged
+      useWatchlistStore.getState().renameGroup("non-existent-id", "새 이름");
+
+      expect(useWatchlistStore.getState().groups[0].name).toBe("기존 그룹");
+    });
+
     it("should set groups directly", () => {
       const groups = [
         { id: "g1", name: "그룹1", order: 0 },
@@ -132,6 +158,20 @@ describe("watchlist-store", () => {
       // State should remain unchanged
       expect(useWatchlistStore.getState().items[groupAId] || []).toHaveLength(0);
       expect(useWatchlistStore.getState().items[groupBId] || []).toHaveLength(0);
+    });
+
+    it("should move item to group with no existing items", () => {
+      // Create only source group with an item
+      useWatchlistStore.getState().addGroup("소스 그룹");
+      const sourceGroupId = useWatchlistStore.getState().groups[0].id;
+      useWatchlistStore.getState().addItem(sourceGroupId, "005930", "삼성전자");
+      const itemId = useWatchlistStore.getState().items[sourceGroupId][0].id;
+
+      // Move to a group that has no items initialized
+      useWatchlistStore.getState().moveItem(itemId, sourceGroupId, "empty-group");
+
+      expect(useWatchlistStore.getState().items[sourceGroupId]).toHaveLength(0);
+      expect(useWatchlistStore.getState().items["empty-group"]).toHaveLength(1);
     });
 
     it("should handle removeItem from non-existent group", () => {
