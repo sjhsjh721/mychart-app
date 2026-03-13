@@ -27,6 +27,7 @@ describe("calculateSMA", () => {
     expect(calculateSMA(candles, 0)).toEqual([]);
     expect(calculateSMA(candles, -1)).toEqual([]);
     expect(calculateSMA(candles, NaN)).toEqual([]);
+    expect(calculateSMA(candles, 0.5)).toEqual([]); // floor(0.5) = 0
   });
 
   it("should calculate SMA correctly for period 3", () => {

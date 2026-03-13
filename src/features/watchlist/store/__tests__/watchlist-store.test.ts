@@ -174,6 +174,14 @@ describe("watchlist-store", () => {
       expect(useWatchlistStore.getState().items["empty-group"]).toHaveLength(1);
     });
 
+    it("should handle moveItem from non-existent group", () => {
+      // Try to move from a group that doesn't exist (items[fromGroupId] is undefined)
+      useWatchlistStore.getState().moveItem("item-id", "non-existent-group", "target-group");
+
+      // Should handle gracefully - nothing happens
+      expect(useWatchlistStore.getState().items["non-existent-group"]).toBeUndefined();
+    });
+
     it("should handle removeItem from non-existent group", () => {
       // Remove from group that doesn't exist - should not throw
       useWatchlistStore.getState().removeItem("non-existent-group", "item-id");
