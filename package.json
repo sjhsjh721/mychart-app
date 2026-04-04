@@ -2,7 +2,7 @@
   "name": "mychart-app",
   "version": "0.1.0",
   "private": true,
-  "packageManager": "pnpm@10.32.1",
+  "packageManager": "pnpm@10.33.0",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -21,8 +21,8 @@
     "@radix-ui/react-toggle": "^1.1.10",
     "@radix-ui/react-toggle-group": "^1.1.11",
     "@radix-ui/react-tooltip": "^1.2.8",
-    "@supabase/ssr": "^0.9.0",
-    "@supabase/supabase-js": "^2.99.3",
+    "@supabase/ssr": "^0.10.0",
+    "@supabase/supabase-js": "^2.101.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "fflate": "^0.8.2",
@@ -34,7 +34,7 @@
     "react-dom": "^18",
     "tailwind-merge": "^3.5.0",
     "tailwindcss-animate": "^1.0.7",
-    "yahoo-finance2": "^3.13.2",
+    "yahoo-finance2": "^3.14.0",
     "zustand": "^5.0.12"
   },
   "devDependencies": {
@@ -44,7 +44,7 @@
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "@vitejs/plugin-react": "^5.2.0",
-    "@vitest/coverage-v8": "^4.1.0",
+    "@vitest/coverage-v8": "^4.1.2",
     "eslint": "^8",
     "eslint-config-next": "14.2.35",
     "eslint-config-prettier": "^10.1.8",
@@ -54,6 +54,6 @@
     "prettier": "^3.8.1",
     "tailwindcss": "^3.4.19",
     "typescript": "^5",
-    "vitest": "^4.1.0"
+    "vitest": "^4.1.2"
   }
 }
